@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ภาพรวมต้นแบบ — LOEI CAT HOTEL Booking System</title>
+  <style>
+    :root{--ink:#26352f;--green:#496a5a;--green2:#e4eee7;--cream:#f7f3eb;--paper:#fffdfa;--orange:#d7834f;--line:#e5ded2;--muted:#707b75;--red:#a9504b}
+    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:"Noto Sans Thai",Tahoma,Arial,sans-serif}.wrap{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:34px 0 60px}.hero{background:var(--ink);color:#fff;border-radius:24px;padding:30px}.eyebrow{font-size:11px;color:#c5d3cb;font-weight:800;letter-spacing:.08em}.hero h1{font-size:30px;margin:5px 0}.hero p{color:#d8e1dc;margin:0;max-width:720px}.status{display:inline-block;margin-top:17px;background:#dcebdd;color:#315841;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:900}
+    h2{font-size:20px;margin:27px 0 13px}.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.flow div{background:var(--paper);border:1px solid var(--line);border-radius:15px;padding:14px;position:relative;min-height:95px}.flow b{display:block;color:var(--green);font-size:12px}.flow span{display:block;margin-top:6px;font-size:13px}.flow div:not(:last-child):after{content:"→";position:absolute;right:-10px;top:34px;z-index:2;color:var(--orange);font-weight:900}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;min-height:205px}.tag{font-size:10px;font-weight:900;color:var(--green);background:var(--green2);border-radius:999px;padding:5px 8px;align-self:flex-start}.card h3{font-size:17px;margin:12px 0 6px}.card p{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 16px}.card a{margin-top:auto;text-decoration:none;text-align:center;background:var(--green);color:#fff;padding:10px;border-radius:11px;font-weight:800;font-size:12px}.card a.secondary{background:#fff;color:var(--green);border:1px solid #acc2b3}
+    .readiness{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px}.panel h3{font-size:16px;margin:0 0 10px}.panel ul{margin:0;padding-left:20px;font-size:12px;line-height:1.8}.ready h3{color:var(--green)}.pending h3{color:var(--red)}.conclusion{margin-top:18px;border-left:5px solid var(--orange);background:#fff4eb;border-radius:12px;padding:15px 18px;font-size:13px;line-height:1.6}.footer{text-align:center;margin-top:28px;color:var(--muted);font-size:11px}
+    @media(max-width:850px){.flow{grid-template-columns:1fr}.flow div{min-height:auto}.flow div:not(:last-child):after{content:"↓";right:50%;top:auto;bottom:-14px}.grid{grid-template-columns:1fr 1fr}.readiness{grid-template-columns:1fr}}
+    @media(max-width:560px){.wrap{width:min(100% - 20px,1120px);padding-top:10px}.hero{border-radius:18px;padding:22px}.hero h1{font-size:24px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero"><div class="eyebrow">PROJECT PROTOTYPE OVERVIEW</div><h1>LOEI CAT HOTEL Booking System</h1><p>รวมหน้าต้นแบบทั้งหมดสำหรับตรวจเส้นทางจองของลูกค้า การทำงานของพนักงาน และเอกสารพิมพ์ ก่อนเชื่อม LINE OA และฐานข้อมูลจริง</p><div class="status">ต้นแบบหน้าจอพร้อมตรวจ • ระบบจริงยังไม่เปิดใช้งาน</div></header>
+
+  <h2>เส้นทางการจอง</h2>
+  <section class="flow"><div><b>1 • LINE OA</b><span>ลูกค้ากดปุ่มจองห้อง</span></div><div><b>2 • หน้าจอง</b><span>เลือกวัน ห้อง ราคา และกรอกข้อมูล</span></div><div><b>3 • ชำระมัดจำ</b><span>ดูพร้อมเพย์และส่งหลักฐาน</span></div><div><b>4 • พนักงานตรวจ</b><span>ตรวจสลิปและกดยืนยัน</span></div><div><b>5 • ยืนยันสำเร็จ</b><span>ส่ง Push 1 ครั้งและเปิดบัตรยืนยัน</span></div></section>
+
+  <h2>หน้าที่เปิดตรวจได้</h2>
+  <section class="grid">
+    <article class="card"><span class="tag">ลูกค้า</span><h3>หน้าจองผ่าน LINE OA</h3><p>ทดลองเลือกวัน จำนวนแมว ห้อง แพ็กเกจ กรอกข้อมูล คลินิกฉุกเฉิน และดูยอดมัดจำ</p><a href="apps/customer-booking/prototypes/booking.html">เปิดหน้าจอง</a></article>
+    <article class="card"><span class="tag">ลูกค้า</span><h3>หน้ายืนยันการจอง</h3><p>รายละเอียดหลังพนักงานตรวจการชำระเงิน พร้อมปุ่มกลับ LINE และเปิดเอกสารต่าง ๆ</p><a href="apps/customer-booking/prototypes/booking-confirmed.html">เปิดหน้ายืนยัน</a></article>
+    <article class="card"><span class="tag">ลูกค้า</span><h3>บัตรสำหรับแคปหน้าจอ</h3><p>รวมข้อมูลยืนยันที่จำเป็นให้อยู่ในหน้าจอโทรศัพท์เดียว สำหรับแสดงวันเข้าพัก</p><a href="apps/customer-booking/prototypes/booking-pass-mobile.html">เปิดบัตรมือถือ</a></article>
+    <article class="card"><span class="tag">เอกสาร</span><h3>เอกสารการจอง</h3><p>ใบยืนยันสำหรับเครื่องพิมพ์ Thermal POS 80 มม. ความยาวปรับตามข้อมูล</p><a class="secondary" href="apps/customer-booking/prototypes/booking-confirmation-80mm.html">เปิดเอกสารการจอง</a></article>
+    <article class="card"><span class="tag">พนักงาน</span><h3>แดชบอร์ดหลังบ้าน</h3><p>ภาพรวมวันนี้ ตารางห้อง งานประจำวัน รายการเข้า–ออก และปุ่มตามตำแหน่งงาน</p><a href="apps/staff-dashboard/prototypes/dashboard.html">เปิดแดชบอร์ด</a></article>
+    <article class="card"><span class="tag">เอกสาร</span><h3>ใบข้อมูลหน้าห้อง</h3><p>ข้อมูลแมว อาหาร ยา ข้อควรระวัง และงานประจำวันสำหรับติดหน้าห้อง</p><a class="secondary" href="apps/staff-dashboard/prototypes/room-label-80mm.html">เปิดใบหน้าห้อง</a></article>
+  </section>
+
+  <h2>ความพร้อมของโครงการ</h2>
+  <section class="readiness"><article class="panel ready"><h3>พร้อมแล้วในระดับต้นแบบ</h3><ul><li>เส้นทางจองลูกค้า 4 ขั้นตอน</li><li>หน้าสรุปและสถานะยืนยัน</li><li>บัตรแคปหน้าจอและเอกสาร POS 80 มม.</li><li>แดชบอร์ดและแนวทางแยกสิทธิ์พนักงาน</li><li>กฎราคา มัดจำ ห้องพัก และเพดาน 30 ตัว</li><li>ร่างโครงสร้างฐานข้อมูลและเอกสารระบบ</li></ul></article><article class="panel pending"><h3>ยังต้องพัฒนาก่อนใช้งานจริง</h3><ul><li>เชื่อม LINE OA / LIFF และ Push Message</li><li>สร้างฐานข้อมูล Supabase จริงและระบบเข้าสู่ระบบ</li><li>ตรวจห้องว่างและป้องกันจองซ้ำแบบ transaction</li><li>รับอัปโหลดสลิปและเอกสารสุขภาพ</li><li>สร้าง QR ชำระเงินจริงจากธนาคารหรือผู้ให้บริการ</li><li>ทดสอบสิทธิ์ ความปลอดภัย เครื่องพิมพ์ และมือถือจริง</li></ul></article></section>
+  <div class="conclusion"><b>สรุป:</b> ภาพรวม UX และหน้าตาหลักพร้อมสำหรับตรวจและแก้ไขแล้ว แต่ยังเป็นข้อมูลจำลอง จึงยังไม่พร้อมรับการจองจากลูกค้าจริง ขั้นต่อไปควรยืนยันหน้าจอทั้งหมด แล้วจึงสร้างฐานข้อมูลและเชื่อม LINE OA</div>
+  <footer class="footer">อัปเดต 30 กรกฎาคม 2569 • LOEI CAT HOTEL</footer>
+</main>
+</body>
+</html>

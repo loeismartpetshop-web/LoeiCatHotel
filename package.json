@@ -1,0 +1,13 @@
+{
+  "name": "loei-cat-hotel-booking",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev:customer": "pnpm --filter @loei-cat-hotel/customer-booking dev",
+    "dev:staff": "pnpm --filter @loei-cat-hotel/staff-dashboard dev",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "engines": { "node": ">=20" }
+}

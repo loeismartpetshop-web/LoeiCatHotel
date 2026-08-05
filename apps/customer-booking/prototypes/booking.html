@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>จองห้องพัก — LOEI CAT HOTEL</title>
+  <style>
+    :root{--ink:#26352f;--green:#496a5a;--green2:#e4eee7;--cream:#f7f3eb;--paper:#fffdfa;--orange:#d7834f;--line:#e5ded2;--muted:#748079;--red:#b85e57}
+    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:"Noto Sans Thai",Tahoma,Arial,sans-serif}.app{width:min(100%,520px);min-height:100vh;margin:auto;background:var(--paper);box-shadow:0 0 40px rgba(35,48,42,.08)}
+    header{background:var(--ink);color:#fff;padding:22px 20px 18px}.brand{font-size:19px;font-weight:900}.brand small{display:block;color:#c9d5ce;font-size:12px;font-weight:500;margin-top:3px}.secure{font-size:11px;color:#b9c8c0;margin-top:12px}
+    .progress{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:14px 20px 5px}.progress i{height:5px;border-radius:9px;background:#e6e1d8}.progress i.active{background:var(--green)}.step-label{padding:4px 20px 0;color:var(--muted);font-size:11px}
+    main{padding:18px 20px 110px}h1{font-size:24px;margin:0 0 5px}p.lead{color:var(--muted);font-size:13px;margin:0 0 20px}.step{display:none}.step.active{display:block}.field{margin:15px 0}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:7px}.control{width:100%;border:1px solid var(--line);border-radius:13px;padding:13px 14px;background:#fff;color:var(--ink);font:inherit}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .count{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}.count button{width:38px;height:38px;border:0;border-radius:10px;background:var(--green2);color:var(--green);font-size:22px;cursor:pointer}.count strong{font-size:22px}.capacity{margin-top:12px;background:var(--green2);border-radius:12px;padding:11px 13px;font-size:12px;color:var(--green)}
+    .choices{display:grid;gap:10px}.choice{display:block;border:1px solid var(--line);border-radius:15px;padding:14px;background:#fff;cursor:pointer}.choice:has(input:checked){border:2px solid var(--green);background:#f2f7f3}.choice input{margin-right:8px}.choice strong{font-size:15px}.choice small{display:block;color:var(--muted);padding-left:24px;margin-top:5px}.price{float:right;font-weight:900;color:var(--green)}
+    .room-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.room{border:1px solid var(--line);border-radius:15px;padding:14px;background:#fff;cursor:pointer;text-align:left}.room.selected{border:2px solid var(--green);background:#f2f7f3}.room strong{display:block}.room small{color:var(--muted)}.recommend{display:inline-block;margin-top:7px;padding:4px 7px;border-radius:999px;background:#f3e3d8;color:#985a35;font-size:9px;font-weight:800}
+    .summary{border:1px solid var(--line);border-radius:16px;overflow:hidden}.summary-head{background:var(--green2);padding:14px;font-weight:900}.row{display:flex;justify-content:space-between;gap:15px;padding:11px 14px;border-top:1px solid var(--line);font-size:13px}.total{font-size:17px;font-weight:900}.deposit{color:var(--orange)}.payment-box{margin-top:14px;border:2px solid var(--green);border-radius:16px;padding:14px;background:#f4f8f5}.payment-box h2{font-size:15px;margin:0 0 10px}.promptpay{font-size:16px;font-weight:900;word-break:break-all}.account{font-size:12px;color:var(--muted);margin:6px 0 11px}.copy{border:1px solid #abc2b2;border-radius:10px;background:#fff;color:var(--green);font-weight:800;padding:9px 12px;cursor:pointer;width:100%}.copy.done{background:var(--green2)}.agree{display:flex;gap:9px;font-size:12px;margin-top:16px}.note{background:#fff3e9;border:1px solid #ecd0bb;border-radius:13px;padding:12px;font-size:12px;margin-top:14px}
+    .footer{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,520px);display:flex;gap:10px;padding:13px 20px 18px;background:rgba(255,253,250,.96);border-top:1px solid var(--line);backdrop-filter:blur(8px)}.btn{flex:1;border:1px solid var(--line);border-radius:13px;padding:13px;font-weight:900;background:#fff;color:var(--ink);cursor:pointer}.btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn[hidden]{display:none}
+    .success{text-align:center;padding:25px 5px}.check{width:72px;height:72px;border-radius:50%;background:var(--green2);color:var(--green);display:grid;place-items:center;margin:0 auto 18px;font-size:35px;font-weight:900}.booking-no{font-size:20px;font-weight:900;border:1px dashed var(--green);padding:12px;border-radius:13px;margin:18px 0}.success .note{text-align:left}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header><div class="brand">LOEI CAT HOTEL<small>โรงแรมแมวเมืองเลยยินดีให้บริการ</small></div><div class="secure">เปิดจาก LINE OA • ข้อมูลของคุณส่งถึงโรงแรมโดยตรง</div></header>
+  <div class="progress"><i class="active"></i><i></i><i></i><i></i></div><div class="step-label" id="stepLabel">ขั้นตอน 1 จาก 4</div>
+  <main>
+    <section class="step active" data-step="1">
+      <h1>ต้องการฝากน้องวันไหนคะ?</h1><p class="lead">เลือกวันและจำนวนแมว ระบบจะตรวจห้องว่างให้ทันที</p>
+      <div class="two"><div class="field"><label>วันเข้าพัก</label><input class="control" id="checkin" type="date" value="2026-08-10"></div><div class="field"><label>วันกลับ</label><input class="control" id="checkout" type="date" value="2026-08-13"></div></div>
+      <div class="field"><label>จำนวนแมว</label><div class="count"><button id="minus" aria-label="ลดจำนวน">−</button><strong><span id="petCount">2</span> ตัว</strong><button id="plus" aria-label="เพิ่มจำนวน">+</button></div></div>
+      <div class="capacity">✓ วันที่เลือกยังรับแมวได้อีก 11 ตัว</div>
+    </section>
+    <section class="step" data-step="2">
+      <h1>เลือกห้องพัก</h1><p class="lead">ราคาเท่ากัน เลือกห้องที่เหมาะกับน้องได้เลย</p>
+      <div class="room-grid"><button class="room selected" data-room="คอนโด"><strong>ห้องคอนโด</strong><small>กว้าง 3 ชั้น รองรับ 2–4 ตัว</small><span class="recommend">แนะนำ</span></button><button class="room" data-room="วิลล่า"><strong>ห้องวิลล่า</strong><small>ห้องไม้ส่วนตัว รองรับ 1–2 ตัว</small></button></div>
+      <div class="field"><label>บริการที่ต้องการ</label><div class="choices"><label class="choice"><input type="radio" name="rate" value="250" checked><strong>โรงแรมจัดเตรียมให้</strong><span class="price">250 บาท</span><small>รวมอาหาร น้ำ และทราย / ตัว / คืน</small></label><label class="choice"><input type="radio" name="rate" value="150"><strong>นำอาหารและทรายมาเอง</strong><span class="price">150 บาท</span><small>ต่อตัว ต่อคืน</small></label></div></div>
+    </section>
+    <section class="step" data-step="3">
+      <h1>ข้อมูลผู้ปกครองและน้องแมว</h1><p class="lead">กรอกเฉพาะข้อมูลจำเป็น เอกสารสุขภาพเพิ่มภายหลังได้</p>
+      <div class="field"><label>ชื่อผู้ปกครอง</label><input class="control" placeholder="เช่น คุณกานต์"></div><div class="field"><label>เบอร์โทรศัพท์</label><input class="control" type="tel" placeholder="08X-XXX-XXXX"></div><div class="field"><label>ชื่อแมว</label><input class="control" placeholder="เช่น มะลิ, โกโก้"></div>
+      <div class="field"><label>คลินิกหรือโรงพยาบาลสัตว์ประจำ (กรณีฉุกเฉิน)</label><input class="control" placeholder="ชื่อคลินิก / โรงพยาบาลสัตว์"></div>
+      <div class="field"><label>เบอร์ติดต่อสถานพยาบาล (ถ้ามี)</label><input class="control" type="tel" placeholder="กรอกเบอร์โทรศัพท์"></div>
+      <label class="agree"><input type="checkbox"> ไม่มีคลินิกประจำ และอนุญาตให้โรงแรมติดต่อสถานพยาบาลในเครือเมื่อเกิดเหตุฉุกเฉิน</label>
+      <div class="field"><label>การดูแลพิเศษ</label><div class="choices"><label class="choice"><input type="checkbox"> มียาที่ต้องให้</label><label class="choice"><input type="checkbox"> มีโรคประจำตัวที่ไม่ติดต่อ</label><label class="choice"><input type="checkbox"> ขี้กลัว / ต้องให้เวลาปรับตัว</label><label class="choice"><input type="checkbox"> ไม่มีการดูแลพิเศษ</label></div></div>
+      <div class="note">เอกสารวัคซีนและการป้องกันเห็บหมัดสามารถอัปโหลดภายหลังได้ ระบบจะแจ้งเตือนก่อนเข้าพัก 1 วัน</div>
+    </section>
+    <section class="step" data-step="4">
+      <h1>ตรวจสอบก่อนส่งคำขอจอง</h1><p class="lead">หลังส่งข้อมูล ห้องจะอยู่ในสถานะรอมัดจำถึง 24:00 น. วันนี้</p>
+      <div class="summary"><div class="summary-head">สรุปการจอง</div><div class="row"><span>วันที่</span><b>10–13 ส.ค. 2569</b></div><div class="row"><span>ห้อง</span><b id="summaryRoom">คอนโด</b></div><div class="row"><span>จำนวน</span><b><span class="summaryPets">2</span> ตัว × 3 คืน</b></div><div class="row"><span>ค่าบริการรวม</span><b id="total">1,500 บาท</b></div><div class="row total deposit"><span>มัดจำ 50%</span><b id="deposit">750 บาท</b></div></div>
+      <div class="payment-box"><h2>ชำระมัดจำผ่านพร้อมเพย์</h2><div class="promptpay" id="promptpayNumber">KPS004KB000002201754</div><div class="account">ชื่อบัญชี: บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด</div><button class="copy" id="copyPromptpay" type="button">คัดลอกหมายเลขพร้อมเพย์</button></div>
+      <label class="agree"><input type="checkbox" checked> ยืนยันว่าข้อมูลถูกต้อง และรับทราบว่าการคืนมัดจำต้องติดต่อโรงแรมเพื่อพิจารณา</label>
+      <div class="note">กรุณาตรวจสอบชื่อบัญชีก่อนโอน และอัปโหลดหลักฐานการชำระเงิน หลังจากนั้นพนักงานจะตรวจและยืนยันผ่าน LINE OA</div>
+    </section>
+    <section class="step" data-step="5"><div class="success"><div class="check">✓</div><h1>ส่งคำขอจองแล้ว</h1><p class="lead">โรงแรมได้รับข้อมูลของคุณเรียบร้อย</p><div class="booking-no">BK-20260730-015</div><div class="note"><b>ขั้นตอนถัดไป</b><br>กรุณาชำระมัดจำภายใน 24:00 น. วันนี้ หลังพนักงานตรวจสอบแล้วจะยืนยันการจองผ่าน LINE OA</div><p><a href="booking-confirmed.html">ดูตัวอย่างเมื่อยืนยันการจองแล้ว →</a></p></div></section>
+  </main>
+  <div class="footer"><button class="btn" id="back" hidden>ย้อนกลับ</button><button class="btn primary" id="next">ตรวจห้องว่าง</button></div>
+</div>
+<script>
+  let step=1,petCount=2,room='คอนโด';const maxStep=5;const labels=['','ขั้นตอน 1 จาก 4','ขั้นตอน 2 จาก 4','ขั้นตอน 3 จาก 4','ขั้นตอน 4 จาก 4','ส่งข้อมูลสำเร็จ'];
+  const next=document.getElementById('next'),back=document.getElementById('back');
+  function render(){document.querySelectorAll('.step').forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===step));document.querySelectorAll('.progress i').forEach((i,n)=>i.classList.toggle('active',n<Math.min(step,4)));document.getElementById('stepLabel').textContent=labels[step];back.hidden=step===1||step===5;next.hidden=step===5;next.textContent=step===1?'ตรวจห้องว่าง':step===2?'เลือกห้องนี้':step===3?'ตรวจสอบข้อมูล':step===4?'ส่งคำขอจอง':'ถัดไป';if(step===4)calculate();window.scrollTo(0,0)}
+  function calculate(){const rate=Number(document.querySelector('input[name="rate"]:checked').value);const total=rate*petCount*3;document.querySelectorAll('.summaryPets').forEach(x=>x.textContent=petCount);document.getElementById('summaryRoom').textContent=room;document.getElementById('total').textContent=total.toLocaleString('th-TH')+' บาท';document.getElementById('deposit').textContent=(total/2).toLocaleString('th-TH')+' บาท'}
+  next.addEventListener('click',()=>{if(step<maxStep){step++;render()}});back.addEventListener('click',()=>{if(step>1){step--;render()}});
+  document.getElementById('minus').addEventListener('click',()=>{petCount=Math.max(1,petCount-1);document.getElementById('petCount').textContent=petCount});document.getElementById('plus').addEventListener('click',()=>{petCount=Math.min(30,petCount+1);document.getElementById('petCount').textContent=petCount});
+  document.querySelectorAll('.room').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.room').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');room=b.dataset.room}));
+  document.getElementById('copyPromptpay').addEventListener('click',async event=>{const value=document.getElementById('promptpayNumber').textContent;try{await navigator.clipboard.writeText(value);event.currentTarget.textContent='คัดลอกแล้ว ✓';event.currentTarget.classList.add('done')}catch{event.currentTarget.textContent='กรุณากดค้างที่หมายเลขเพื่อคัดลอก'}});
+</script>
+</body>
+</html>
