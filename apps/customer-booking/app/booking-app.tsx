@@ -96,17 +96,14 @@ function formatDateRange(form: BookingForm): string {
   return `${formatter.format(new Date(`${form.checkInDate}T12:00:00+07:00`))} – ${formatter.format(new Date(`${form.checkOutDate}T12:00:00+07:00`))}`;
 }
 
-function createPrototypeBookingCode(): string {
-  const stamp = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `DEMO-${stamp}`;
-}
-
 export function BookingApp() {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<BookingForm>(initialForm);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const requestId = useRef<string | null>(null);
   const [theme, setTheme] = useState<ThemeSettings>(LOGO_THEME);
   const [themeOpen, setThemeOpen] = useState(false);
   const logoTapCount = useRef(0);
@@ -223,21 +220,39 @@ export function BookingApp() {
       }
     }
     if (step === 4 && !form.termsAccepted) {
-      setError("กรุณายืนยันข้อมูลและรับทราบเงื่อนไขก่อนส่งคำขอ");
+      setError("กรุณายืนยันข้อมูลและยินยอมให้จัดเก็บข้อมูลเพื่อดำเนินคำขอจอง");
       return false;
     }
     return true;
   };
 
-  const goNext = () => {
-    if (!validateStep()) return;
-    if (step === 4) {
-      setBookingCode(createPrototypeBookingCode());
-      setStep(5);
-    } else {
+  const goNext = async () => {
+    if (!validateStep() || submitting) return;
+    if (step !== 4) {
       setStep((current) => Math.min(5, current + 1) as Step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    setSubmitting(true);
+    setError("");
+    requestId.current ??= window.crypto.randomUUID();
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, ratePlan: activeRate, idempotencyKey: requestId.current })
+      });
+      const result = await response.json() as { bookingCode?: string; error?: string };
+      if (!response.ok || !result.bookingCode) throw new Error(result.error ?? "บันทึกคำขอไม่สำเร็จ");
+      setBookingCode(result.bookingCode);
+      setStep(5);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "บันทึกคำขอไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const goBack = () => {
@@ -331,7 +346,7 @@ export function BookingApp() {
                   {step === 1 && "เลือกช่วงเวลาและจำนวนแมว เพื่อเตรียมตรวจห้องว่าง"}
                   {step === 2 && "ราคา Villa และ Condo เท่ากัน เลือกให้เหมาะกับน้องได้เลย"}
                   {step === 3 && "เอกสารวัคซีนและการป้องกันเห็บหมัดส่งภายหลังได้"}
-                  {step === 4 && "รายการต้นแบบนี้ยังไม่กันห้องจริงจนกว่าจะเชื่อม Booking API"}
+                  {step === 4 && "ตรวจชื่อ เบอร์โทร วันเข้าพัก และข้อมูลน้องให้ครบก่อนบันทึกลงระบบ"}
                 </p>
               </div>
 
@@ -437,56 +452,66 @@ export function BookingApp() {
               )}
 
               {step === 4 && (
-                <section className="form-section" aria-label="สรุปการจอง">
+                <section className="form-section" aria-label="ตรวจสอบข้อมูลก่อนบันทึก">
+                  <div className="review-edit-actions" aria-label="แก้ไขข้อมูล">
+                    <button type="button" onClick={() => setStep(1)}>แก้วันเข้าพัก</button>
+                    <button type="button" onClick={() => setStep(2)}>แก้ห้อง/แพ็กเกจ</button>
+                    <button type="button" onClick={() => setStep(3)}>แก้ข้อมูลลูกค้า</button>
+                  </div>
+
                   <div className="summary-card">
-                    <div className="summary-top"><span>สรุปคำขอจอง</span><small>ราคาประเมินเบื้องต้น</small></div>
+                    <div className="summary-top"><span>ตรวจสอบข้อมูลก่อนบันทึก</span><small>ระบบจะสร้างรหัสคำขอจอง</small></div>
                     <dl>
+                      <div><dt>ผู้ปกครอง</dt><dd>{form.guardianName}</dd></div>
+                      <div><dt>เบอร์โทร</dt><dd>{form.phone}</dd></div>
                       <div><dt>ช่วงเวลา</dt><dd>{formatDateRange(form)}</dd></div>
                       <div><dt>ห้องพัก</dt><dd>{form.roomType === "condo" ? "คอนโด" : "วิลล่า"}</dd></div>
                       <div><dt>น้องแมว</dt><dd>{form.petNames.join(" · ")}</dd></div>
                       <div><dt>แพ็กเกจ</dt><dd>{form.mode === "hourly" ? "ฝากไม่เกิน 6 ชั่วโมง" : selectedRate.title}</dd></div>
                       <div><dt>จำนวน</dt><dd>{form.petCount} ตัว{form.mode === "overnight" ? ` × ${nights} คืน` : ""}</dd></div>
+                      <div><dt>สถานพยาบาล</dt><dd>{form.clinicName || "ให้โรงแรมติดต่อสถานพยาบาลในเครือ"}</dd></div>
                     </dl>
                     <div className="money-row"><span>ค่าบริการรวม</span><strong>{formatBaht(total)}</strong></div>
                     <div className="money-row deposit-row"><span>มัดจำ 50%</span><strong>{formatBaht(deposit)}</strong></div>
-                    <p className="calculation-note">* การนับคืนและห้องว่างจะยืนยันอีกครั้งจาก Booking API ตามกฎที่เจ้าของอนุมัติ</p>
+                    <p className="calculation-note">* คำขอจะบันทึกเป็นฉบับรอตรวจสอบ ยังไม่ถือว่าได้รับการยืนยันห้องพักจนกว่าพนักงานจะแจ้งผ่าน LINE OA</p>
                   </div>
 
-                  <div className="payment-card">
-                    <div className="payment-title"><span className="payment-icon">฿</span><div><b>ชำระมัดจำผ่านพร้อมเพย์</b><small>ชำระภายใน 24:00 น. ของวันที่สร้างรายการ</small></div></div>
-                    <div className="promptpay-row"><div><span>หมายเลขรับชำระ</span><strong>KPS004KB000002201754</strong></div><button type="button" onClick={copyPromptPay}>{copied ? "คัดลอกแล้ว ✓" : "คัดลอก"}</button></div>
-                    <p>ชื่อบัญชี: บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด</p>
-                    <div className="verification-note">กรุณาตรวจชื่อบัญชีก่อนโอน รหัสรับชำระนี้ต้องได้รับการยืนยันกับธนาคารก่อนเปิดใช้งานจริง</div>
-                  </div>
-
-                  <label className="terms-row"><input type="checkbox" checked={form.termsAccepted} onChange={(event) => updateForm("termsAccepted", event.target.checked)} /><span>ยืนยันว่าข้อมูลถูกต้อง และรับทราบว่าคำขอยกเลิกหรือคืนมัดจำต้องให้ทีมงานพิจารณา</span></label>
+                  <label className="terms-row consent-confirm"><input type="checkbox" checked={form.termsAccepted} onChange={(event) => updateForm("termsAccepted", event.target.checked)} /><span>ยืนยันว่าข้อมูลถูกต้อง และยินยอมให้ LOEI CAT HOTEL จัดเก็บข้อมูลส่วนบุคคลและข้อมูลสุขภาพของสัตว์เพื่อดำเนินคำขอจองและการดูแล</span></label>
+                  <div className="review-save-note"><span aria-hidden="true">✓</span><p><b>เมื่อกดบันทึก ระบบจะส่งข้อมูลเข้า Supabase</b><small>ข้อมูลจะอยู่ในสถานะรอพนักงานตรวจสอบ และป้องกันการกดบันทึกซ้ำด้วยรหัสคำขอเดียวกัน</small></p></div>
                 </section>
               )}
 
               {error && <div className="error-message" role="alert">{error}</div>}
 
               <div className="actions">
-                {step > 1 && <button className="button secondary" type="button" onClick={goBack}>ย้อนกลับ</button>}
-                <button className="button primary" type="button" onClick={goNext}>
-                  {step === 1 && "ตรวจห้องว่าง"}{step === 2 && "ยืนยันห้องและแพ็กเกจ"}{step === 3 && "ตรวจสอบข้อมูล"}{step === 4 && "ส่งคำขอต้นแบบ"}<span aria-hidden="true">→</span>
+                {step > 1 && <button className="button secondary" type="button" onClick={goBack} disabled={submitting}>ย้อนกลับ</button>}
+                <button className="button primary" type="button" onClick={goNext} disabled={submitting} aria-busy={submitting}>
+                  {step === 1 && "ตรวจห้องว่าง"}{step === 2 && "ยืนยันห้องและแพ็กเกจ"}{step === 3 && "ตรวจสอบข้อมูล"}{step === 4 && (submitting ? "กำลังบันทึก..." : "บันทึกคำขอจอง")}{!submitting && <span aria-hidden="true">→</span>}
                 </button>
               </div>
             </>
           ) : (
             <section className="success-view" aria-live="polite">
               <div className="success-mark" aria-hidden="true">✓</div>
-              <span className="step-kicker">ส่งข้อมูลต้นแบบสำเร็จ</span>
-              <h2>ได้รับข้อมูลของน้องแล้วค่ะ</h2>
-              <p>ข้อมูลยังไม่ถูกส่งเข้าโรงแรมหรือกันห้องจริง เนื่องจาก Booking API และ Supabase ยังไม่ได้เชื่อมต่อ</p>
-              <div className="prototype-code"><span>รหัสอ้างอิงต้นแบบ</span><strong>{bookingCode}</strong></div>
-              <div className="next-steps"><b>เมื่อต่อระบบจริง ขั้นตอนถัดไปคือ</b><ol><li>ระบบถือห้องถึง 24:00 น.</li><li>ลูกค้าอัปโหลดหลักฐานมัดจำ 50%</li><li>พนักงานตรวจและยืนยันผ่าน LINE OA 1 ครั้ง</li></ol></div>
-              <button className="button primary full" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); }}>เริ่มคำขอใหม่</button>
+              <span className="step-kicker">บันทึกข้อมูลสำเร็จ</span>
+              <h2>ได้รับคำขอจองแล้วค่ะ</h2>
+              <p>ข้อมูลผู้ปกครองและน้องแมวถูกบันทึกในระบบแล้ว รอพนักงานตรวจสอบห้องว่างและยืนยันผ่าน LINE OA</p>
+              <div className="prototype-code"><span>รหัสคำขอจอง</span><strong>{bookingCode}</strong></div>
+
+              <div className="payment-card success-payment">
+                <div className="payment-title"><span className="payment-icon">฿</span><div><b>มัดจำ 50% ผ่านพร้อมเพย์</b><small>โปรดรอพนักงานยืนยันห้องก่อนชำระเงิน</small></div></div>
+                <div className="promptpay-row"><div><span>หมายเลขรับชำระ</span><strong>KPS004KB000002201754</strong></div><button type="button" onClick={copyPromptPay}>{copied ? "คัดลอกแล้ว ✓" : "คัดลอก"}</button></div>
+                <p>ชื่อบัญชี: บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด</p>
+              </div>
+
+              <div className="next-steps"><b>ขั้นตอนถัดไป</b><ol><li>พนักงานตรวจห้องและรายละเอียดคำขอ</li><li>โรงแรมยืนยันผ่าน LINE OA</li><li>ลูกค้าชำระมัดจำและส่งหลักฐานตามคำแนะนำ</li></ol></div>
+              <button className="button primary full" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); requestId.current = null; }}>เริ่มคำขอใหม่</button>
               <a className="line-link" href="https://line.me/R/ti/p/%40002lffmk">กลับไป LINE OA <span>↗</span></a>
             </section>
           )}
         </div>
 
-        <footer className="privacy-footer">ข้อมูลส่วนตัวและเอกสารสุขภาพจะจัดเก็บแบบจำกัดสิทธิ์เมื่อเชื่อมระบบจริง</footer>
+        <footer className="privacy-footer">ข้อมูลส่วนตัวและข้อมูลสุขภาพจัดเก็บใน Supabase โดยจำกัดสิทธิ์การเข้าถึง</footer>
       </section>
 
       <ThemeSettingsPanel

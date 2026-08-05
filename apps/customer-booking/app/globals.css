@@ -378,3 +378,19 @@ button { color: inherit; }
   .theme-actions { position: sticky; bottom: 0; margin: 18px -18px -18px; padding: 12px 18px calc(12px + env(safe-area-inset-bottom)); background: rgba(255, 254, 253, 0.96); backdrop-filter: blur(10px); }
   .theme-actions .button { flex: 1; padding-inline: 10px; }
 }
+.button:disabled { opacity: 0.62; cursor: wait; transform: none; box-shadow: none; }
+.review-edit-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.review-edit-actions button { padding: 7px 10px; border: 1px solid var(--line); border-radius: 99px; color: var(--forest-800); background: var(--forest-50); font-size: 9px; font-weight: 700; cursor: pointer; }
+.review-edit-actions button:hover { border-color: var(--forest-700); }
+.consent-confirm { margin-top: 17px; padding: 13px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: var(--cream-50); }
+.review-save-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 11px; padding: 12px 13px; border-radius: 13px; color: var(--forest-800); background: var(--forest-50); }
+.review-save-note > span { width: 25px; height: 25px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--forest-700); font-size: 11px; }
+.review-save-note p, .review-save-note b, .review-save-note small { display: block; margin: 0; }
+.review-save-note b { font-size: 10px; }
+.review-save-note small { margin-top: 2px; color: var(--muted); font-size: 8px; }
+.success-payment { margin-bottom: 14px; text-align: left; }
+
+@media (max-width: 640px) {
+  .review-edit-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .review-edit-actions button { padding-inline: 5px; white-space: nowrap; }
+}
