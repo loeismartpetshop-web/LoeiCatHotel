@@ -8,6 +8,7 @@ type RoomType = "villa" | "condo";
 
 interface BookingRequest {
   idempotencyKey: string;
+  lineIdToken?: string;
   mode: BookingMode;
   checkInDate?: string;
   checkOutDate?: string;
@@ -30,6 +31,7 @@ interface BookingRequest {
 interface CustomerRow { customer_id: string }
 interface PetRow { pet_id: string }
 interface BookingRow { booking_id: string; booking_code: string; status: string }
+interface LineIdentity { userId: string; displayName: string | null }
 
 class PublicError extends Error {
   constructor(message: string, readonly status = 400) {
@@ -102,6 +104,93 @@ function createBookingCode(): string {
   return `BK-${date}-${crypto.randomUUID().replaceAll("-", "").slice(0, 6).toUpperCase()}`;
 }
 
+async function verifyLineIdToken(idToken: string | undefined): Promise<LineIdentity | null> {
+  if (!idToken) return null;
+  const channelId = process.env.LINE_LOGIN_CHANNEL_ID;
+  if (!channelId) throw new PublicError("ระบบ LINE ยังตั้งค่าไม่ครบ กรุณาติดต่อโรงแรม", 503);
+
+  const response = await fetch("https://api.line.me/oauth2/v2.1/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ id_token: idToken, client_id: channelId })
+  });
+  const payload = await response.json() as { sub?: string; name?: string; error_description?: string };
+  if (!response.ok || !payload.sub?.startsWith("U")) {
+    console.warn("LINE ID token verification failed", payload.error_description ?? response.status);
+    throw new PublicError("ยืนยันบัญชี LINE ไม่สำเร็จ กรุณาปิดแล้วเปิดหน้าจองจาก LINE OA อีกครั้ง", 401);
+  }
+  return { userId: payload.sub, displayName: payload.name?.trim() || null };
+}
+
+async function sendLinePaymentChoice(
+  lineUserId: string,
+  bookingId: string,
+  bookingCode: string,
+  totalAmount: number
+): Promise<boolean> {
+  const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!accessToken) return false;
+  const amount = totalAmount.toLocaleString("th-TH");
+  const response = await fetch("https://api.line.me/v2/bot/message/push", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Line-Retry-Key": bookingId
+    },
+    body: JSON.stringify({
+      to: lineUserId,
+      messages: [{
+        type: "flex",
+        altText: `ยืนยันคำขอจอง ${bookingCode} และเลือกชำระวันเช็กอิน`,
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            backgroundColor: "#F8C8E8",
+            paddingAll: "18px",
+            contents: [
+              { type: "text", text: "LOEI CAT HOTEL", weight: "bold", color: "#3D1632", size: "lg" },
+              { type: "text", text: "ยืนยันคำขอจอง", color: "#6E365C", size: "sm", margin: "sm" }
+            ]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            paddingAll: "18px",
+            spacing: "md",
+            contents: [
+              { type: "text", text: bookingCode, weight: "bold", size: "xl", color: "#2C1826" },
+              { type: "text", text: `ยอดชำระวันเช็กอิน ${amount} บาท`, size: "sm", color: "#6D5A68", wrap: true },
+              { type: "text", text: "กดปุ่มเพื่อยืนยันคำขอและเลือกชำระเต็มจำนวนในวันเช็กอิน จากนั้นรอพนักงานตรวจสอบห้องว่างค่ะ", size: "sm", color: "#6D5A68", wrap: true }
+            ]
+          },
+          footer: {
+            type: "box",
+            layout: "vertical",
+            paddingAll: "18px",
+            contents: [{
+              type: "button",
+              style: "primary",
+              color: "#7B315F",
+              height: "sm",
+              action: {
+                type: "postback",
+                label: "ยืนยันการจอง — ชำระวันเช็กอิน",
+                data: `action=confirm_pay_checkin&booking_code=${encodeURIComponent(bookingCode)}`,
+                displayText: `ยืนยันการจอง ${bookingCode} — ชำระวันเช็กอิน`
+              }
+            }]
+          }
+        }
+      }]
+    })
+  });
+  if (response.ok || response.status === 409) return true;
+  console.error("LINE push failed", response.status, (await response.text()).slice(0, 500));
+  return false;
+}
 async function removeRows(table: string, column: string, ids: string[]): Promise<void> {
   if (!ids.length) return;
   try {
@@ -165,6 +254,7 @@ function validateRequest(input: BookingRequest) {
 
   return {
     idempotencyKey,
+    lineIdToken: typeof input.lineIdToken === "string" ? input.lineIdToken.slice(0, 4096) : undefined,
     guardianName,
     phone,
     petNames,
@@ -198,6 +288,7 @@ export async function POST(request: Request) {
   const created = { customerId: "", petIds: [] as string[], bookingId: "" };
   try {
     const input = validateRequest(await request.json() as BookingRequest);
+    const lineIdentity = await verifyLineIdToken(input.lineIdToken);
     const existing = await supabaseRequest<BookingRow[]>(
       `bookings?select=booking_id,booking_code,status&idempotency_key=eq.${encodeURIComponent(input.idempotencyKey)}&limit=1`
     );
@@ -205,19 +296,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ bookingCode: existing[0].booking_code, status: existing[0].status, duplicate: true });
     }
 
-    const customers = await supabaseRequest<CustomerRow[]>("customers", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify({
-        full_name: input.guardianName,
-        phone: input.phone,
-        acquisition_source: "web",
-        privacy_consent_at: new Date().toISOString()
-      })
-    });
-    const customer = customers[0];
-    if (!customer) throw new Error("Customer insert returned no row");
-    created.customerId = customer.customer_id;
+    let customer: CustomerRow | undefined;
+    if (lineIdentity) {
+      const returningCustomers = await supabaseRequest<CustomerRow[]>(
+        `customers?select=customer_id&line_user_id=eq.${encodeURIComponent(lineIdentity.userId)}&limit=1`
+      );
+      customer = returningCustomers[0];
+      if (customer) {
+        await supabaseRequest(`customers?customer_id=eq.${encodeURIComponent(customer.customer_id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            full_name: input.guardianName,
+            phone: input.phone,
+            line_display_name: lineIdentity.displayName,
+            updated_at: new Date().toISOString()
+          })
+        });
+      }
+    }
+
+    if (!customer) {
+      const customers = await supabaseRequest<CustomerRow[]>("customers", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify({
+          full_name: input.guardianName,
+          phone: input.phone,
+          line_user_id: lineIdentity?.userId ?? null,
+          line_display_name: lineIdentity?.displayName ?? null,
+          acquisition_source: lineIdentity ? "line_oa" : "web",
+          privacy_consent_at: new Date().toISOString()
+        })
+      });
+      customer = customers[0];
+      if (!customer) throw new Error("Customer insert returned no row");
+      created.customerId = customer.customer_id;
+    }
 
     const pets = await supabaseRequest<PetRow[]>("pets", {
       method: "POST",
@@ -241,7 +355,7 @@ export async function POST(request: Request) {
         booking_code: bookingCode,
         customer_id: customer.customer_id,
         status: "draft",
-        source: "web",
+        source: lineIdentity ? "line_oa" : "web",
         check_in_at: input.checkInAt,
         check_out_at: input.checkOutAt,
         total_pets: input.petNames.length,
@@ -293,7 +407,26 @@ export async function POST(request: Request) {
       })
     });
 
-    return NextResponse.json({ bookingCode: booking.booking_code, status: booking.status }, { status: 201 });
+    let lineMessageSent = false;
+    if (lineIdentity) {
+      try {
+        lineMessageSent = await sendLinePaymentChoice(
+          lineIdentity.userId,
+          booking.booking_id,
+          booking.booking_code,
+          input.totalAmount
+        );
+      } catch (lineError) {
+        console.error("Unable to send LINE confirmation button", lineError);
+      }
+    }
+
+    return NextResponse.json({
+      bookingCode: booking.booking_code,
+      status: booking.status,
+      lineConnected: Boolean(lineIdentity),
+      lineMessageSent
+    }, { status: 201 });
   } catch (error) {
     if (created.bookingId) {
       await removeRows("booking_status_history", "booking_id", [created.bookingId]);

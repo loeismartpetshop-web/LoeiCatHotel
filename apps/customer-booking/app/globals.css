@@ -389,6 +389,33 @@ button { color: inherit; }
 .review-save-note b { font-size: 10px; }
 .review-save-note small { margin-top: 2px; color: var(--muted); font-size: 8px; }
 .success-payment { margin-bottom: 14px; text-align: left; }
+.line-confirmation-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-align: left;
+  background: var(--forest-50);
+}
+.line-confirmation-card.missing { background: var(--cream-50); }
+.line-confirmation-dot {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--forest-700);
+  font-weight: 800;
+}
+.line-confirmation-card.missing .line-confirmation-dot { background: var(--terracotta); }
+.line-confirmation-card b, .line-confirmation-card small { display: block; }
+.line-confirmation-card b { font-size: 11px; }
+.line-confirmation-card small { margin-top: 3px; color: var(--muted); font-size: 9px; }
 
 @media (max-width: 640px) {
   .review-edit-actions { display: grid; grid-template-columns: repeat(3, 1fr); }

@@ -17,6 +17,7 @@ import {
   ThemeSettingsPanel,
   type ThemeSettings
 } from "./theme-settings";
+import { getLineIdToken } from "./line-client";
 
 type BookingMode = "overnight" | "hourly";
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -100,10 +101,11 @@ export function BookingApp() {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<BookingForm>(initialForm);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
+  const [lineMessageSent, setLineMessageSent] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const requestId = useRef<string | null>(null);
+  const lineIdToken = useRef<string | null>(null);
   const [theme, setTheme] = useState<ThemeSettings>(LOGO_THEME);
   const [themeOpen, setThemeOpen] = useState(false);
   const logoTapCount = useRef(0);
@@ -121,6 +123,12 @@ export function BookingApp() {
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    void getLineIdToken()
+      .then((token) => { lineIdToken.current = token; })
+      .catch((lineError) => { console.warn("LIFF initialization failed", lineError); });
+  }, []);
 
   const handleLogoTap = () => {
     logoTapCount.current += 1;
@@ -238,14 +246,27 @@ export function BookingApp() {
     setError("");
     requestId.current ??= window.crypto.randomUUID();
     try {
+      if (!lineIdToken.current) {
+        try {
+          lineIdToken.current = await getLineIdToken();
+        } catch (lineError) {
+          console.warn("Unable to obtain LINE ID token", lineError);
+        }
+      }
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, ratePlan: activeRate, idempotencyKey: requestId.current })
+        body: JSON.stringify({
+          ...form,
+          ratePlan: activeRate,
+          idempotencyKey: requestId.current,
+          lineIdToken: lineIdToken.current ?? undefined
+        })
       });
-      const result = await response.json() as { bookingCode?: string; error?: string };
+      const result = await response.json() as { bookingCode?: string; lineMessageSent?: boolean; error?: string };
       if (!response.ok || !result.bookingCode) throw new Error(result.error ?? "บันทึกคำขอไม่สำเร็จ");
       setBookingCode(result.bookingCode);
+      setLineMessageSent(Boolean(result.lineMessageSent));
       setStep(5);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
@@ -274,15 +295,6 @@ export function BookingApp() {
     });
   };
 
-  const copyPromptPay = async () => {
-    try {
-      await navigator.clipboard.writeText("KPS004KB000002201754");
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2200);
-    } catch {
-      setError("ไม่สามารถคัดลอกอัตโนมัติได้ กรุณากดค้างที่หมายเลขเพื่อคัดลอก");
-    }
-  };
 
   const selectedRate = ratePlans.find((plan) => plan.code === form.ratePlan) ?? ratePlans[0]!;
 
@@ -495,18 +507,22 @@ export function BookingApp() {
               <div className="success-mark" aria-hidden="true">✓</div>
               <span className="step-kicker">บันทึกข้อมูลสำเร็จ</span>
               <h2>ได้รับคำขอจองแล้วค่ะ</h2>
-              <p>ข้อมูลผู้ปกครองและน้องแมวถูกบันทึกในระบบแล้ว รอพนักงานตรวจสอบห้องว่างและยืนยันผ่าน LINE OA</p>
+              <p>{lineMessageSent
+                ? "ส่งปุ่มยืนยันไปที่ห้องแชต LINE OA แล้ว กรุณากลับไปกดปุ่มเพื่อยืนยันคำขอค่ะ"
+                : "บันทึกข้อมูลแล้ว แต่ยังส่งปุ่มเข้า LINE ไม่สำเร็จ กรุณาเปิดหน้าจองจากเมนู LINE OA หรือติดต่อพนักงานค่ะ"}</p>
               <div className="prototype-code"><span>รหัสคำขอจอง</span><strong>{bookingCode}</strong></div>
 
-              <div className="payment-card success-payment">
-                <div className="payment-title"><span className="payment-icon">฿</span><div><b>มัดจำ 50% ผ่านพร้อมเพย์</b><small>โปรดรอพนักงานยืนยันห้องก่อนชำระเงิน</small></div></div>
-                <div className="promptpay-row"><div><span>หมายเลขรับชำระ</span><strong>KPS004KB000002201754</strong></div><button type="button" onClick={copyPromptPay}>{copied ? "คัดลอกแล้ว ✓" : "คัดลอก"}</button></div>
-                <p>ชื่อบัญชี: บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด</p>
+              <div className={`line-confirmation-card ${lineMessageSent ? "sent" : "missing"}`}>
+                <span className="line-confirmation-dot" aria-hidden="true">{lineMessageSent ? "✓" : "!"}</span>
+                <div>
+                  <b>{lineMessageSent ? "ปุ่มรออยู่ใน LINE แล้ว" : "ยังไม่ได้เชื่อมคำขอกับ LINE"}</b>
+                  <small>ปุ่ม: “ยืนยันการจอง — ชำระวันเช็กอิน”</small>
+                </div>
               </div>
 
-              <div className="next-steps"><b>ขั้นตอนถัดไป</b><ol><li>พนักงานตรวจห้องและรายละเอียดคำขอ</li><li>โรงแรมยืนยันผ่าน LINE OA</li><li>ลูกค้าชำระมัดจำและส่งหลักฐานตามคำแนะนำ</li></ol></div>
-              <button className="button primary full" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); requestId.current = null; }}>เริ่มคำขอใหม่</button>
-              <a className="line-link" href="https://line.me/R/ti/p/%40002lffmk">กลับไป LINE OA <span>↗</span></a>
+              <div className="next-steps"><b>ขั้นตอนถัดไป</b><ol><li>กลับไปที่ห้องแชต LOEI CAT HOTEL</li><li>กด “ยืนยันการจอง — ชำระวันเช็กอิน”</li><li>รอพนักงานตรวจสอบและยืนยันห้องว่าง</li><li>ชำระเต็มจำนวนในวันเช็กอินหลังได้รับการยืนยันห้อง</li></ol></div>
+              <button className="button primary full" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); setLineMessageSent(null); requestId.current = null; }}>เริ่มคำขอใหม่</button>
+              <a className="line-link" href="https://line.me/R/ti/p/%40002lffmk">เปิด LINE เพื่อกดยืนยัน <span>↗</span></a>
             </section>
           )}
         </div>
