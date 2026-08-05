@@ -13,62 +13,104 @@ Version: 1.0
 | รายการ | สถานะ |
 |---|---|
 | LINE OA `@002lffmk` | มีแล้ว |
-| Provider ใน LINE Developers | ยังไม่ได้สร้าง |
-| Messaging API channel | ยังไม่ได้เปิด |
-| LINE Login channel + LIFF app | ยังไม่ได้สร้าง |
-| Webhook endpoint | ยังไม่มี |
+| Provider `LOEI CAT HOTEL` | **สร้างแล้ว** |
+| Messaging API channel `LOEI CAT HOTEL` | **สร้างแล้ว** |
+| LINE Login channel `Login Cat Hotel` | **สร้างแล้ว** (สถานะ Developing) |
+| ผูก OA เข้ากับ LINE Login channel | ยังไม่ได้ทำ |
+| Channel secret / access token เข้า `.env` | ยังไม่ได้ทำ |
+| ตั้งค่า Response settings ใน OA Manager | ยังไม่ได้ทำ |
+| LIFF app | **รอ HTTPS URL** |
+| Webhook endpoint | **รอ server** |
 | Rich Menu | ยังไม่ได้ทำ |
 
 ต้องได้ 3 ค่านี้เข้า `.env` ให้ครบ: `PUBLIC_LINE_LIFF_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`
 
+### โครงสร้างที่ใช้
+
+```
+Provider: LOEI CAT HOTEL
+├── LOEI CAT HOTEL   (Messaging API)  → webhook / push / rich menu
+└── Login Cat Hotel  (LINE Login)     → ใส่ LIFF app ได้หลายตัว
+```
+
+**Provider เดียวเท่านั้น** — LIFF ไม่ใช่ channel แต่เป็นของที่อยู่ข้างใน LINE Login channel
+
+เหตุผลที่ห้ามแยก provider:
+
+- `userId` เท่ากันเฉพาะภายใน provider เดียวกัน ข้าม provider = คนเดียวกันได้ ID คนละค่า → push ยืนยันการจองไปหาลูกค้าไม่ได้
+- ผูก OA เข้ากับ LINE Login channel ข้าม provider **ไม่ได้** (LINE บังคับว่า Messaging API channel ต้องอยู่ provider เดียวกัน)
+- ย้าย channel ข้าม provider ทีหลังไม่ได้ ต้องสร้างใหม่หมด
+
 ---
 
-## 1. สร้าง Provider (ทำครั้งเดียว)
+## 1. ทำได้เลยตอนนี้ (ไม่ต้องรอ URL)
 
-1. เข้า https://developers.line.biz/console/ ล็อกอินด้วย **LINE account เจ้าของ OA** (ไม่ใช่บัญชีส่วนตัวคนอื่น)
-2. Create a new provider → ชื่อ เช่น `LOEI CAT HOTEL`
+### 1.1 ผูก OA เข้ากับ LINE Login channel
 
-> **สำคัญ:** Messaging API channel และ LINE Login channel **ต้องอยู่ Provider เดียวกัน** ไม่งั้น LIFF จะดึง LINE user ID ไปผูกกับ push message ไม่ได้ และย้าย provider ทีหลังไม่ได้
+`Login Cat Hotel` → **Basic settings** → **Linked LINE Official Account** → Edit → เลือก `LOEI CAT HOTEL`
 
----
+ถ้าเลือกได้ = ยืนยันว่า provider ตรงกันจริง ถ้าไม่ขึ้นในลิสต์ แปลว่ามีอะไรผิด ต้องแก้ก่อนทำต่อ
 
-## 2. เปิด Messaging API ให้ OA เดิม
+### 1.2 เก็บ secret และ token
 
-เนื่องจากมี OA `@002lffmk` อยู่แล้ว ให้เปิดจากฝั่ง OA Manager:
+Messaging API channel `LOEI CAT HOTEL`:
 
-1. เข้า https://manager.line.biz/ → เลือก `@002lffmk`
-2. **Settings → Messaging API → Enable Messaging API**
-3. เลือก Provider ที่สร้างในข้อ 1
-4. กลับไปที่ LINE Developers Console จะเห็น channel ใหม่โผล่ขึ้นมา
-
-จากนั้นในหน้า channel:
-
-- แท็บ **Basic settings** → คัดลอก `Channel secret` → `LINE_CHANNEL_SECRET`
+- แท็บ **Basic settings** → `Channel secret` → `LINE_CHANNEL_SECRET`
 - แท็บ **Messaging API** → Issue `Channel access token (long-lived)` → `LINE_CHANNEL_ACCESS_TOKEN`
 
-ปิดค่าเริ่มต้นที่รบกวนใน OA Manager → Settings → Response settings:
+ทั้งสองค่าเป็น **server-side เท่านั้น** ห้ามเข้า frontend bundle หรือ commit เข้า git
 
-- Greeting message: เปิด (แก้ข้อความเป็นแนะนำโรงแรม + ปุ่มจอง)
-- Auto-response: **ปิด**
-- Webhooks: **เปิด**
+### 1.3 ตั้งค่า OA Manager
+
+https://manager.line.biz/ → `@002lffmk` → Settings → Response settings:
+
+| ตัวเลือก | ตั้งเป็น | เหตุผล |
+|---|---|---|
+| Auto-response | **ปิด** | ไม่งั้นบอทสำเร็จรูปตอบทับ AI ของเรา |
+| Greeting message | เปิด | แก้ข้อความเป็นแนะนำโรงแรม |
+| Webhooks | **เปิด** | ต้องเปิดก่อนถึงจะรับ event ได้ |
+
+### 1.4 ตั้ง scope ของ LINE Login
+
+`Login Cat Hotel` → **LINE Login** tab → Scopes: เลือก `profile`, `openid` (ยังไม่ต้อง `email`)
+
+### 1.5 ตัดสินใจแพ็กเกจ OA
+
+เลือกแพ็กเกจตามโควตา push ต่อเดือน — ผูกกับข้อ 6 โดยตรง ถ้าโควตาน้อยต้องระวังไม่ให้มี push เกินที่จำเป็น
 
 ---
 
-## 3. สร้าง LINE Login channel + LIFF
+## 2. รอก่อน (ติด dependency)
+
+| งาน | ติดอะไร |
+|---|---|
+| สร้าง LIFF app | ต้องมี HTTPS URL ของ `apps/customer-booking` |
+| ตั้ง Webhook URL | ต้อง deploy `services/booking-api` ก่อน |
+| Publish `Login Cat Hotel` | ทำตอนใกล้เปิดใช้จริง |
+
+**หมายเหตุเรื่องสถานะ Developing:** ตอนนี้ `Login Cat Hotel` เป็น Developing ใช้ได้เฉพาะคนที่เป็น admin/tester ของ channel — ทดสอบได้ปกติ แต่ **ต้องกด Publish ก่อนเปิดให้ลูกค้าจริง** ไม่งั้นลูกค้าเข้า LIFF ไม่ได้
+
+---
+
+## 3. สร้าง LIFF app (เมื่อมี URL แล้ว)
 
 LIFF คือหน้าเว็บจองที่เปิดในแอป LINE — คือ `apps/customer-booking` ของเรา
 
-1. ใน Provider เดิม → Create a new channel → **LINE Login**
-2. App types: เลือก **Web app**
-3. เข้าแท็บ **LIFF** → Add
-   - LIFF app name: `จองห้องพัก`
-   - Size: **Full**
-   - Endpoint URL: URL production ของ `apps/customer-booking` (เช่น `https://booking.loeicathotel.com`) — ตอน dev ใส่ ngrok/tunnel ไปก่อน แก้ทีหลังได้
-   - Scopes: `profile`, `openid` (ยังไม่ต้อง `email`)
-   - Bot link feature: **On (Aggressive)** แล้วเลือก OA `@002lffmk`
-4. คัดลอก **LIFF ID** → `PUBLIC_LINE_LIFF_ID`
+`Login Cat Hotel` → แท็บ **LIFF** → Add
 
-> Endpoint URL ต้องเป็น **HTTPS เท่านั้น** localhost ใช้ไม่ได้
+- LIFF app name: `จองห้องพัก`
+- Size: **Full**
+- Endpoint URL: URL ของ `apps/customer-booking`
+- Scopes: `profile`, `openid`
+- Bot link feature: **On (Aggressive)** → เลือก `LOEI CAT HOTEL`
+
+คัดลอก **LIFF ID** → `PUBLIC_LINE_LIFF_ID`
+
+> Endpoint URL ต้องเป็น **HTTPS เท่านั้น** localhost ใช้ไม่ได้ และ **แก้ทีหลังได้ตลอด** — ไม่ต้องรอ URL production ตัวจริงถึงจะสร้าง LIFF ได้
+
+**ข้อควรระวังเรื่อง permanent link:** ถ้า URL ของหน้าที่เปิดอยู่ไม่ได้ขึ้นต้นด้วย Endpoint URL ที่ลงทะเบียนไว้ ฟีเจอร์แชร์ลิงก์ของ LIFF จะพัง — ตอนย้าย domain ต้องอัปเดตค่านี้ด้วยเสมอ
+
+**สถานะ deploy ปัจจุบัน:** `apps/customer-booking` ตั้งค่าไว้สำหรับ **Cloudflare Workers** (`vinext` + `@cloudflare/vite-plugin` + `wrangler`) และมี `.openai/hosting.json` ที่ codex ใช้อยู่ ถ้าจะย้ายไป Vercel ต้องถอด Cloudflare plugin และตั้ง build config ใหม่ — ยังไม่ได้ตัดสินใจ
 
 ---
 
