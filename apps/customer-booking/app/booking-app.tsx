@@ -7,6 +7,7 @@ import {
   type RatePlanCode,
   type RoomType
 } from "@loei-cat-hotel/domain";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 
 type BookingMode = "overnight" | "hourly";
@@ -228,7 +229,7 @@ export function BookingApp() {
     <main className="site-shell">
       <section className="brand-panel" aria-label="ข้อมูลโรงแรม">
         <div className="brand-lockup">
-          <div className="brand-mark" aria-hidden="true">L</div>
+          <Image className="brand-mark" src="/loeicathotel-logo.webp" alt="โลโก้ LOEI CAT HOTEL" width={96} height={96} priority />
           <div><strong>LOEI CAT HOTEL</strong><span>โรงแรมแมวเมืองเลย</span></div>
         </div>
         <div className="brand-copy">
@@ -247,7 +248,7 @@ export function BookingApp() {
       <section className="booking-panel">
         <header className="mobile-header">
           <div className="brand-lockup compact">
-            <div className="brand-mark" aria-hidden="true">L</div>
+            <Image className="brand-mark" src="/loeicathotel-logo.webp" alt="โลโก้ LOEI CAT HOTEL" width={96} height={96} priority />
             <div><strong>LOEI CAT HOTEL</strong><span>โรงแรมแมวเมืองเลย</span></div>
           </div>
           <span className="line-badge">จาก LINE OA</span>
