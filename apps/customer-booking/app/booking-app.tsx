@@ -8,7 +8,15 @@ import {
   type RoomType
 } from "@loei-cat-hotel/domain";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  applyTheme,
+  LOGO_THEME,
+  sanitizeTheme,
+  THEME_STORAGE_KEY,
+  ThemeSettingsPanel,
+  type ThemeSettings
+} from "./theme-settings";
 
 type BookingMode = "overnight" | "hourly";
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -99,6 +107,44 @@ export function BookingApp() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
+  const [theme, setTheme] = useState<ThemeSettings>(LOGO_THEME);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const logoTapCount = useRef(0);
+  const logoTapTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved) setTheme(sanitizeTheme(JSON.parse(saved) as Partial<ThemeSettings>));
+    } catch {
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  const handleLogoTap = () => {
+    logoTapCount.current += 1;
+    if (logoTapTimer.current) window.clearTimeout(logoTapTimer.current);
+    if (logoTapCount.current >= 3) {
+      logoTapCount.current = 0;
+      setThemeOpen(true);
+      return;
+    }
+    logoTapTimer.current = window.setTimeout(() => { logoTapCount.current = 0; }, 850);
+  };
+
+  const saveTheme = () => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
+    setThemeOpen(false);
+  };
+
+  const resetTheme = () => {
+    setTheme(LOGO_THEME);
+    window.localStorage.removeItem(THEME_STORAGE_KEY);
+  };
 
   const nights = form.mode === "hourly" ? 1 : countNights(form.checkInDate, form.checkOutDate);
   const activeRate: RatePlanCode = form.mode === "hourly" ? "HOURLY" : form.ratePlan;
@@ -229,7 +275,9 @@ export function BookingApp() {
     <main className="site-shell">
       <section className="brand-panel" aria-label="ข้อมูลโรงแรม">
         <div className="brand-lockup">
-          <Image className="brand-mark" src="/loeicathotel-logo.webp" alt="โลโก้ LOEI CAT HOTEL" width={96} height={96} priority />
+          <button type="button" className="brand-logo-trigger" onClick={handleLogoTap} aria-label="โลโก้ LOEI CAT HOTEL">
+            <Image className="brand-mark" src="/loeicathotel-logo.webp" alt="" width={96} height={96} priority />
+          </button>
           <div><strong>LOEI CAT HOTEL</strong><span>โรงแรมแมวเมืองเลย</span></div>
         </div>
         <div className="brand-copy">
@@ -248,7 +296,9 @@ export function BookingApp() {
       <section className="booking-panel">
         <header className="mobile-header">
           <div className="brand-lockup compact">
-            <Image className="brand-mark" src="/loeicathotel-logo.webp" alt="โลโก้ LOEI CAT HOTEL" width={96} height={96} priority />
+            <button type="button" className="brand-logo-trigger" onClick={handleLogoTap} aria-label="โลโก้ LOEI CAT HOTEL">
+              <Image className="brand-mark" src="/loeicathotel-logo.webp" alt="" width={96} height={96} priority />
+            </button>
             <div><strong>LOEI CAT HOTEL</strong><span>โรงแรมแมวเมืองเลย</span></div>
           </div>
           <span className="line-badge">จาก LINE OA</span>
@@ -438,6 +488,15 @@ export function BookingApp() {
 
         <footer className="privacy-footer">ข้อมูลส่วนตัวและเอกสารสุขภาพจะจัดเก็บแบบจำกัดสิทธิ์เมื่อเชื่อมระบบจริง</footer>
       </section>
+
+      <ThemeSettingsPanel
+        open={themeOpen}
+        value={theme}
+        onChange={setTheme}
+        onClose={() => setThemeOpen(false)}
+        onSave={saveTheme}
+        onReset={resetTheme}
+      />
     </main>
   );
 }
