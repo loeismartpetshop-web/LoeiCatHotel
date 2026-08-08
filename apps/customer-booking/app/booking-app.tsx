@@ -422,7 +422,7 @@ export function BookingApp() {
                     </div>
                   </div>
 
-                  <div className="availability-note"><span className="status-dot" /><div><b>พร้อมตรวจห้องว่าง</b><small>จำนวนห้องว่างจริงจะยืนยันจากระบบกลางในขั้นเชื่อม API</small></div></div>
+                  <div className="availability-note"><span className="status-dot" /><div><b>เลือกวันและจำนวนแมว</b><small>ระบบจะบันทึกช่วงเวลาที่ต้องการไว้ในคำขอจอง</small></div></div>
                 </section>
               )}
 
@@ -512,7 +512,7 @@ export function BookingApp() {
                     </dl>
                     <div className="money-row"><span>ค่าบริการรวม</span><strong>{formatBaht(total)}</strong></div>
                     <div className="money-row deposit-row"><span>มัดจำ 50%</span><strong>{formatBaht(deposit)}</strong></div>
-                    <p className="calculation-note">* คำขอจะบันทึกเป็นฉบับรอตรวจสอบ ยังไม่ถือว่าได้รับการยืนยันห้องพักจนกว่าพนักงานจะแจ้งผ่าน LINE OA</p>
+                    <p className="calculation-note">* ยอดมัดจำนี้จะอยู่ในสถานะรอตรวจสลิปจนกว่าพนักงานจะยืนยันผ่าน LINE OA</p>
                   </div>
 
                   <div className="payment-card review-payment-card">
@@ -520,12 +520,12 @@ export function BookingApp() {
                     <div className="payment-amount-row"><span>ยอดที่ต้องโอน</span><strong>{formatBaht(deposit)}</strong></div>
                     <div className="promptpay-row"><div><span>เลขบัญชี/พร้อมเพย์</span><strong>{PAYMENT_ACCOUNT}</strong></div><button type="button" onClick={copyPaymentAccount}>{copied ? "คัดลอกแล้ว ✓" : "คัดลอก"}</button></div>
                     <p>ชื่อบัญชี: {PAYMENT_ACCOUNT_NAME}</p>
-                    <div className="verification-note">หลังโอนแล้วกดส่งคำขอ ระบบจะส่งบิลเข้า LINE จากนั้นส่งภาพสลิปให้พนักงานตรวจสอบค่ะ</div>
+                    <div className="verification-note">หลังส่งคำขอ ระบบจะส่งบิลมัดจำเข้า LINE ให้ส่งภาพสลิปในแชต แล้วกด “ยืนยันมัดจำ” ค่ะ</div>
                   </div>
 
                   <label className="terms-row payment-confirm"><input type="checkbox" checked={paymentAcknowledged} onChange={(event) => { setPaymentAcknowledged(event.target.checked); setError(""); }} /><span>ฉันตรวจสอบยอดมัดจำและเลขบัญชีแล้ว และจะส่งสลิปผ่าน LINE OA หลังส่งคำขอ</span></label>
                   <label className="terms-row consent-confirm"><input type="checkbox" checked={form.termsAccepted} onChange={(event) => updateForm("termsAccepted", event.target.checked)} /><span>ยืนยันว่าข้อมูลถูกต้อง และยินยอมให้ LOEI CAT HOTEL จัดเก็บข้อมูลส่วนบุคคลและข้อมูลสุขภาพของสัตว์เพื่อดำเนินคำขอจองและการดูแล</span></label>
-                  <div className="review-save-note"><span aria-hidden="true">✓</span><p><b>ระบบจะบันทึกคำขอและรายการมัดจำรอตรวจสอบ</b><small>พนักงานจะตรวจสลิปและห้องว่างก่อนยืนยันการจองผ่าน LINE OA</small></p></div>
+                  <div className="review-save-note"><span aria-hidden="true">✓</span><p><b>ระบบจะบันทึกคำขอและยอดมัดจำรอตรวจสอบ</b><small>เมื่อพนักงานยืนยันสลิป ระบบจะส่งบิลยอดคงเหลือสำหรับวันเช็กอิน</small></p></div>
                 </section>
               )}
 
@@ -544,7 +544,7 @@ export function BookingApp() {
                 <header className="receipt-brand"><strong>LOEI CAT HOTEL</strong><small>โรงแรมแมวเมืองเลยยินดีให้บริการ</small></header>
                 <div className="receipt-check" aria-hidden="true">✓</div>
                 <h2>รับคำขอจองแล้ว</h2>
-                <p className="receipt-subtitle">ใช้หน้าจอนี้และบิลใน LINE ส่งสลิปให้พนักงาน</p>
+                <p className="receipt-subtitle">ส่งภาพสลิปในแชต LINE แล้วกด “ยืนยันมัดจำ” ในบิล</p>
                 <div className="receipt-code"><span>รหัสคำขอจอง</span><strong>{bookingCode}</strong></div>
 
                 <dl className="receipt-summary">
@@ -577,10 +577,10 @@ export function BookingApp() {
 
               <div className={`line-confirmation-card ${lineMessageSent ? "sent" : "missing"}`}>
                 <span className="line-confirmation-dot" aria-hidden="true">{lineMessageSent ? "✓" : "!"}</span>
-                <div><b>{lineMessageSent ? "ส่งบิลเข้า LINE แล้ว" : "ยังส่งบิลเข้า LINE ไม่สำเร็จ"}</b><small>{lineMessageSent ? "เปิดแชตเพื่อส่งสลิปให้พนักงานตรวจสอบ" : "ใช้รหัสคำขอด้านบนติดต่อพนักงานได้ค่ะ"}</small></div>
+                <div><b>{lineMessageSent ? "ส่งบิลมัดจำเข้า LINE แล้ว" : "ยังส่งบิลเข้า LINE ไม่สำเร็จ"}</b><small>{lineMessageSent ? "ส่งภาพสลิปในแชต แล้วกดปุ่มยืนยันมัดจำในบิล" : "ใช้รหัสคำขอด้านบนติดต่อพนักงานได้ค่ะ"}</small></div>
               </div>
 
-              <a className="button primary full receipt-line-button" href={`https://line.me/R/oaMessage/%40002lffmk/?${encodeURIComponent(`ส่งสลิปมัดจำ รหัส ${bookingCode}`)}`}>ส่งสลิปมัดจำใน LINE OA</a>
+
               <button className="button secondary full receipt-new-button" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); setLineMessageSent(null); setPaymentAcknowledged(false); setCopied(false); requestId.current = null; }}>เริ่มคำขอใหม่</button>
             </section>
           )}

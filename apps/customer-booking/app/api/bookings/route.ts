@@ -160,7 +160,7 @@ async function sendLineBookingReceipt(
   const packageName = input.ratePlan === "HOTEL_SUPPLIED"
     ? "โรงแรมจัดเตรียมให้"
     : input.ratePlan === "OWNER_SUPPLIED" ? "นำอาหารและทรายมาเอง" : "ฝากรายชั่วโมง";
-  const slipMessage = encodeURIComponent(`ส่งสลิปมัดจำ รหัส ${bookingCode}`);
+
 
   const response = await fetch("https://api.line.me/v2/bot/message/push", {
     method: "POST",
@@ -226,7 +226,7 @@ async function sendLineBookingReceipt(
                   { type: "text", text: "บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด", size: "xs", color: "#61776E", wrap: true }
                 ]
               },
-              { type: "text", text: "หมายเหตุ: บิลนี้เป็นใบรับคำขอ พนักงานจะยืนยันห้องหลังตรวจสลิปและห้องว่าง", size: "xs", color: "#8B7B86", wrap: true }
+              { type: "text", text: "โอนมัดจำแล้ว ส่งภาพสลิปในแชตนี้ จากนั้นกดปุ่มยืนยันมัดจำด้านล่าง", size: "sm", color: "#8B7B86", wrap: true }
             ]
           },
           footer: {
@@ -236,12 +236,9 @@ async function sendLineBookingReceipt(
             spacing: "sm",
             contents: [
               { type: "button", style: "primary", color: "#7B315F", height: "sm", action: {
-                type: "uri", label: "ส่งสลิปมัดจำ", uri: `https://line.me/R/oaMessage/%40002lffmk/?${slipMessage}`
-              } },
-              { type: "button", style: "secondary", height: "sm", action: {
-                type: "postback", label: "ยืนยัน — ชำระวันเช็กอิน",
-                data: `action=confirm_pay_checkin&booking_code=${encodeURIComponent(bookingCode)}`,
-                displayText: `ยืนยันการจอง ${bookingCode} — ชำระวันเช็กอิน`
+                type: "postback", label: "ยืนยันมัดจำ",
+                data: `action=confirm_deposit&booking_code=${encodeURIComponent(bookingCode)}`,
+                displayText: `แจ้งโอนมัดจำ ${bookingCode} แล้ว`
               } }
             ]
           }
