@@ -153,9 +153,9 @@ async function sendLineBookingReceipt(
 ): Promise<boolean> {
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken) return false;
-  const total = input.totalAmount.toLocaleString("th-TH");
+
   const deposit = input.depositAmount.toLocaleString("th-TH");
-  const balance = (input.totalAmount - input.depositAmount).toLocaleString("th-TH");
+
   const room = input.roomType === "condo" ? "ห้องคอนโด" : "ห้องวิลล่า";
   const packageName = input.ratePlan === "HOTEL_SUPPLIED"
     ? "โรงแรมจัดเตรียมให้"
@@ -205,19 +205,12 @@ async function sendLineBookingReceipt(
               flexDetailRow("เข้าพัก", formatLineDateTime(input.checkInAt)),
               flexDetailRow("รับกลับ", formatLineDateTime(input.checkOutAt)),
               {
-                type: "box", layout: "horizontal", spacing: "sm", margin: "md",
+                type: "box", layout: "vertical", paddingAll: "14px", cornerRadius: "md", backgroundColor: "#F4E4EE", margin: "md",
                 contents: [
-                  { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#F4E4EE", contents: [
-                    { type: "text", text: "มัดจำรอตรวจสอบ", size: "xs", color: "#7B315F" },
-                    { type: "text", text: `${deposit} บาท`, size: "lg", weight: "bold", color: "#7B315F", margin: "xs" }
-                  ] },
-                  { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#FFF1E8", contents: [
-                    { type: "text", text: "ชำระวันเช็กอิน", size: "xs", color: "#A75A2E" },
-                    { type: "text", text: `${balance} บาท`, size: "lg", weight: "bold", color: "#A75A2E", margin: "xs" }
-                  ] }
+                  { type: "text", text: "ยอดมัดจำ", size: "sm", color: "#7B315F", align: "center" },
+                  { type: "text", text: `${deposit} บาท`, size: "xl", weight: "bold", color: "#7B315F", margin: "xs", align: "center" }
                 ]
               },
-              { type: "text", text: `ค่าบริการรวม ${total} บาท`, size: "sm", weight: "bold", color: "#2C1826", align: "end" },
               {
                 type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#F3F7F4", spacing: "xs",
                 contents: [

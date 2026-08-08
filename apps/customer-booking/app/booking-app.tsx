@@ -17,7 +17,7 @@ import {
   ThemeSettingsPanel,
   type ThemeSettings
 } from "./theme-settings";
-import { getLineIdToken } from "./line-client";
+import { closeLineWindow, getLineIdToken } from "./line-client";
 
 type BookingMode = "overnight" | "hourly";
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -150,6 +150,15 @@ export function BookingApp() {
       return;
     }
     logoTapTimer.current = window.setTimeout(() => { logoTapCount.current = 0; }, 850);
+  };
+
+  const returnToLineChat = async () => {
+    try {
+      if (await closeLineWindow()) return;
+    } catch (lineError) {
+      console.warn("Unable to close LIFF window", lineError);
+    }
+    window.location.href = "https://line.me/R/oaMessage/%40002lffmk";
   };
 
   const saveTheme = () => {
@@ -561,8 +570,7 @@ export function BookingApp() {
                 </div>
 
                 <div className="receipt-payments">
-                  <div><span>มัดจำรอตรวจสอบ</span><strong>{formatBaht(deposit)}</strong></div>
-                  <div><span>ชำระวันเช็กอิน</span><strong>{formatBaht(total - deposit)}</strong></div>
+                  <div><span>ยอดมัดจำ</span><strong>{formatBaht(deposit)}</strong></div>
                 </div>
 
                 <div className="receipt-account">
@@ -580,7 +588,7 @@ export function BookingApp() {
                 <div><b>{lineMessageSent ? "ส่งบิลมัดจำเข้า LINE แล้ว" : "ยังส่งบิลเข้า LINE ไม่สำเร็จ"}</b><small>{lineMessageSent ? "ส่งภาพสลิปในแชต แล้วกดปุ่มยืนยันมัดจำในบิล" : "ใช้รหัสคำขอด้านบนติดต่อพนักงานได้ค่ะ"}</small></div>
               </div>
 
-
+              <button className="button primary full receipt-line-button" type="button" onClick={() => { void returnToLineChat(); }}>กลับไปหน้าแชต LINE</button>
               <button className="button secondary full receipt-new-button" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); setLineMessageSent(null); setPaymentAcknowledged(false); setCopied(false); requestId.current = null; }}>เริ่มคำขอใหม่</button>
             </section>
           )}

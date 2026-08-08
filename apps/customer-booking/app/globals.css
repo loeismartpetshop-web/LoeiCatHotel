@@ -443,14 +443,16 @@ button { color: inherit; }
 .receipt-summary div:last-child { border-bottom: 0; }
 .receipt-summary dt { color: var(--muted); text-align: left; font-size: 11px; }
 .receipt-summary dd { margin: 0; text-align: right; font-size: 12px; font-weight: 700; }
-.receipt-dates, .receipt-payments { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.receipt-dates, .receipt-payments { display: grid; gap: 8px; margin-top: 9px; }
+.receipt-dates { grid-template-columns: 1fr 1fr; }
+.receipt-payments { grid-template-columns: 1fr; }
 .receipt-dates > div, .receipt-payments > div { padding: 10px 8px; border: 1px solid var(--line); border-radius: 12px; }
 .receipt-dates span, .receipt-dates strong, .receipt-dates small, .receipt-payments span, .receipt-payments strong { display: block; }
 .receipt-dates span, .receipt-payments span { color: var(--muted); font-size: 10px; }
 .receipt-dates strong { margin-top: 3px; font-size: 13px; }
 .receipt-dates small { margin-top: 1px; color: var(--muted); font-size: 10px; }
-.receipt-payments > div:first-child { color: var(--forest-800); background: var(--forest-50); }
-.receipt-payments > div:last-child { color: var(--terracotta); background: var(--terracotta-100); }
+.receipt-payments > div { color: var(--forest-800); background: var(--forest-50); }
+
 .receipt-payments strong { margin-top: 4px; font-size: 17px; }
 .receipt-account { margin-top: 9px; padding: 12px; border: 1px solid #9eb9aa; border-radius: 13px; text-align: left; background: #f3f7f4; }
 .receipt-account span, .receipt-account strong, .receipt-account small { display: block; }
@@ -462,7 +464,7 @@ button { color: inherit; }
 .receipt-prep b { font-size: 11px; }
 .receipt-prep p { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .receipt-card + .line-confirmation-card { margin-top: 12px; }
-.receipt-line-button { text-decoration: none; }
+.receipt-line-button { margin-top: 12px; text-decoration: none; }
 .receipt-new-button { margin-top: 9px; }
 
 @media (max-width: 640px) {

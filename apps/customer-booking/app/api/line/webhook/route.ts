@@ -21,7 +21,7 @@ interface BookingRow {
 }
 
 interface CustomerRow { line_user_id: string | null }
-interface PaymentRow { status: string }
+interface PaymentRow { payment_id?: string; status: string }
 
 function getSupabaseConfig(): { url: string; key: string } {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.PUBLIC_SUPABASE_URL;
@@ -143,28 +143,39 @@ async function handleCheckinConfirmation(event: LineWebhookEvent, bookingCode: s
     await replyText(event.replyToken, `การจอง ${bookingCode} ยังไม่ผ่านการยืนยันมัดจำ กรุณารอบิลยืนยันจากพนักงานก่อนค่ะ`);
     return;
   }
-  const marker = "ลูกค้ายืนยันมาถึงและพร้อมชำระยอดคงเหลือวันเช็กอิน";
-  const alreadyNotified = booking.customer_notes?.includes(marker) ?? false;
-  if (!alreadyNotified) {
-    const balancePayments = await supabaseRequest<PaymentRow[]>(
-      `payments?select=status&booking_id=eq.${encodeURIComponent(booking.booking_id)}&payment_type=eq.balance&limit=1`
-    );
-    if (!balancePayments[0] && Number(booking.balance_amount) > 0) {
+
+  const now = new Date().toISOString();
+  const balancePayments = await supabaseRequest<PaymentRow[]>(
+    `payments?select=payment_id,status&booking_id=eq.${encodeURIComponent(booking.booking_id)}&payment_type=eq.balance&limit=1`
+  );
+  const balancePayment = balancePayments[0];
+  if (balancePayment?.status !== "paid") {
+    if (balancePayment?.payment_id) {
+      await supabaseRequest(`payments?payment_id=eq.${encodeURIComponent(balancePayment.payment_id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "paid", paid_at: now, updated_at: now })
+      });
+    } else if (Number(booking.balance_amount) > 0) {
       await supabaseRequest("payments", {
         method: "POST",
         body: JSON.stringify({
           booking_id: booking.booking_id,
           payment_type: "balance",
           amount: booking.balance_amount,
-          status: "pending",
-          payment_method: "pay_at_checkin"
+          status: "paid",
+          payment_method: "pay_at_checkin",
+          paid_at: now
         })
       });
     }
-    const notes = booking.customer_notes?.trim() ? `${booking.customer_notes}; ${marker}` : marker;
+
+    const marker = "ลูกค้ายืนยันชำระยอดคงเหลือวันเช็กอินแล้ว";
+    const notes = booking.customer_notes?.includes(marker)
+      ? booking.customer_notes
+      : booking.customer_notes?.trim() ? `${booking.customer_notes}; ${marker}` : marker;
     await supabaseRequest(`bookings?booking_id=eq.${encodeURIComponent(booking.booking_id)}`, {
       method: "PATCH",
-      body: JSON.stringify({ customer_notes: notes, updated_at: new Date().toISOString() })
+      body: JSON.stringify({ customer_notes: notes, updated_at: now })
     });
     await supabaseRequest("booking_status_history", {
       method: "POST",
@@ -172,17 +183,17 @@ async function handleCheckinConfirmation(event: LineWebhookEvent, bookingCode: s
         booking_id: booking.booking_id,
         previous_status: booking.status,
         next_status: booking.status,
-        reason: "ลูกค้ากดยืนยันมาถึงและพร้อมชำระยอดคงเหลือวันเช็กอิน",
+        reason: `ลูกค้ากดยืนยันชำระยอดคงเหลือ ${Number(booking.balance_amount).toLocaleString("th-TH")} บาทในวันเช็กอิน`,
         actor_type: "customer"
       })
     });
   }
+
   await replyText(
     event.replyToken,
-    `รับแจ้งวันเช็กอินสำหรับ ${bookingCode} แล้วค่ะ ยอดคงเหลือ ${Number(booking.balance_amount).toLocaleString("th-TH")} บาท พนักงานจะรับชำระและยืนยันที่โรงแรม`
+    `ชำระเรียบร้อยแล้วค่ะ ${Number(booking.balance_amount).toLocaleString("th-TH")} บาท สำหรับ ${bookingCode} ขอบคุณค่ะ`
   );
 }
-
 export async function POST(request: Request) {
   const body = await request.text();
   if (!hasValidSignature(body, request.headers.get("x-line-signature"))) {

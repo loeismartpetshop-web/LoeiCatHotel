@@ -19,3 +19,10 @@ export async function getLineIdToken(): Promise<string | null> {
   if (!liff || !liff.isLoggedIn()) return null;
   return liff.getIDToken();
 }
+
+export async function closeLineWindow(): Promise<boolean> {
+  const liff = await getLiff();
+  if (!liff || !liff.isInClient()) return false;
+  liff.closeWindow();
+  return true;
+}

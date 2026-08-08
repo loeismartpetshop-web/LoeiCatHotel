@@ -78,8 +78,8 @@ async function pushCheckinReceipt(booking: BookingRow, customer: CustomerRow, pa
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken || !customer.line_user_id) throw new Error("LINE customer or access token is missing");
   const balance = Number(booking.balance_amount).toLocaleString("th-TH");
-  const deposit = Number(booking.deposit_amount).toLocaleString("th-TH");
-  const total = Number(booking.total_amount).toLocaleString("th-TH");
+
+
   const response = await fetch("https://api.line.me/v2/bot/message/push", {
     method: "POST",
     headers: {
@@ -106,22 +106,15 @@ async function pushCheckinReceipt(booking: BookingRow, customer: CustomerRow, pa
             detailRow("เข้าพัก", formatDate(booking.check_in_at)),
             detailRow("รับกลับ", formatDate(booking.check_out_at)),
             { type: "separator", color: "#E8DEE5" },
-            { type: "box", layout: "horizontal", spacing: "sm", contents: [
-              { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#E5F1EA", contents: [
-                { type: "text", text: "มัดจำชำระแล้ว", size: "xs", color: "#315B4B" },
-                { type: "text", text: `${deposit} บาท`, size: "lg", weight: "bold", color: "#315B4B", margin: "xs" }
-              ] },
-              { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#FFF1E8", contents: [
-                { type: "text", text: "คงเหลือวันเช็กอิน", size: "xs", color: "#A75A2E" },
-                { type: "text", text: `${balance} บาท`, size: "lg", weight: "bold", color: "#A75A2E", margin: "xs" }
-              ] }
+            { type: "box", layout: "vertical", paddingAll: "14px", cornerRadius: "md", backgroundColor: "#FFF1E8", contents: [
+              { type: "text", text: "ชำระวันเช็กอิน", size: "sm", color: "#A75A2E", align: "center" },
+              { type: "text", text: `${balance} บาท`, size: "xl", weight: "bold", color: "#A75A2E", margin: "xs", align: "center" }
             ] },
-            { type: "text", text: `ค่าบริการรวม ${total} บาท`, size: "sm", weight: "bold", color: "#2C1826", align: "end" },
             { type: "text", text: "เก็บบิลนี้ไว้ และกดปุ่มด้านล่างเมื่อมาถึงโรงแรมในวันเช็กอิน", size: "sm", color: "#8B7B86", wrap: true }
           ] },
           footer: { type: "box", layout: "vertical", paddingAll: "16px", contents: [
             { type: "button", style: "primary", color: "#315B4B", height: "sm", action: {
-              type: "postback", label: "ยืนยันชำระวันเช็กอิน",
+              type: "postback", label: "ชำระวันเช็กอิน",
               data: `action=confirm_checkin_payment&booking_code=${encodeURIComponent(booking.booking_code)}`,
               displayText: `มาถึงแล้ว ยืนยันชำระยอดคงเหลือ ${booking.booking_code}`
             } }
