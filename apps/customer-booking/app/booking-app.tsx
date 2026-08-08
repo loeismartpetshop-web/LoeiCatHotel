@@ -22,6 +22,9 @@ import { getLineIdToken } from "./line-client";
 type BookingMode = "overnight" | "hourly";
 type Step = 1 | 2 | 3 | 4 | 5;
 
+const PAYMENT_ACCOUNT = "KPS004KB000002201754";
+const PAYMENT_ACCOUNT_NAME = "บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด";
+
 interface BookingForm {
   mode: BookingMode;
   checkInDate: string;
@@ -97,10 +100,18 @@ function formatDateRange(form: BookingForm): string {
   return `${formatter.format(new Date(`${form.checkInDate}T12:00:00+07:00`))} – ${formatter.format(new Date(`${form.checkOutDate}T12:00:00+07:00`))}`;
 }
 
+function formatReceiptDate(value: string): string {
+  if (!value) return "–";
+  return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", year: "numeric" })
+    .format(new Date(`${value}T12:00:00+07:00`));
+}
+
 export function BookingApp() {
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<BookingForm>(initialForm);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [paymentAcknowledged, setPaymentAcknowledged] = useState(false);
   const [bookingCode, setBookingCode] = useState("");
   const [lineMessageSent, setLineMessageSent] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -227,9 +238,15 @@ export function BookingApp() {
         return false;
       }
     }
-    if (step === 4 && !form.termsAccepted) {
-      setError("กรุณายืนยันข้อมูลและยินยอมให้จัดเก็บข้อมูลเพื่อดำเนินคำขอจอง");
-      return false;
+    if (step === 4) {
+      if (!paymentAcknowledged) {
+        setError("กรุณาตรวจสอบยอดมัดจำและเลขบัญชีก่อนส่งคำขอจอง");
+        return false;
+      }
+      if (!form.termsAccepted) {
+        setError("กรุณายืนยันข้อมูลและยินยอมให้จัดเก็บข้อมูลเพื่อดำเนินคำขอจอง");
+        return false;
+      }
     }
     return true;
   };
@@ -296,6 +313,16 @@ export function BookingApp() {
   };
 
 
+  const copyPaymentAccount = async () => {
+    try {
+      await navigator.clipboard.writeText(PAYMENT_ACCOUNT);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      setError("คัดลอกเลขบัญชีอัตโนมัติไม่ได้ กรุณากดค้างที่เลขบัญชีเพื่อคัดลอก");
+    }
+  };
+
   const selectedRate = ratePlans.find((plan) => plan.code === form.ratePlan) ?? ratePlans[0]!;
 
   return (
@@ -352,13 +379,13 @@ export function BookingApp() {
                   {step === 1 && "น้องจะมาพักวันไหนคะ?"}
                   {step === 2 && "เลือกห้องและการดูแล"}
                   {step === 3 && "รู้จักผู้ปกครองและน้องแมว"}
-                  {step === 4 && "ตรวจสอบก่อนส่งคำขอ"}
+                  {step === 4 && "ตรวจสอบและชำระมัดจำ"}
                 </h2>
                 <p>
                   {step === 1 && "เลือกช่วงเวลาและจำนวนแมว เพื่อเตรียมตรวจห้องว่าง"}
                   {step === 2 && "ราคา Villa และ Condo เท่ากัน เลือกให้เหมาะกับน้องได้เลย"}
                   {step === 3 && "เอกสารวัคซีนและการป้องกันเห็บหมัดส่งภายหลังได้"}
-                  {step === 4 && "ตรวจชื่อ เบอร์โทร วันเข้าพัก และข้อมูลน้องให้ครบก่อนบันทึกลงระบบ"}
+                  {step === 4 && "ตรวจข้อมูลและยอดมัดจำ จากนั้นโอนและส่งสลิปผ่าน LINE OA"}
                 </p>
               </div>
 
@@ -488,8 +515,17 @@ export function BookingApp() {
                     <p className="calculation-note">* คำขอจะบันทึกเป็นฉบับรอตรวจสอบ ยังไม่ถือว่าได้รับการยืนยันห้องพักจนกว่าพนักงานจะแจ้งผ่าน LINE OA</p>
                   </div>
 
+                  <div className="payment-card review-payment-card">
+                    <div className="payment-title"><span className="payment-icon">฿</span><div><b>ชำระมัดจำก่อนส่งคำขอ</b><small>ยอดมัดจำ 50% · {formatBaht(deposit)}</small></div></div>
+                    <div className="payment-amount-row"><span>ยอดที่ต้องโอน</span><strong>{formatBaht(deposit)}</strong></div>
+                    <div className="promptpay-row"><div><span>เลขบัญชี/พร้อมเพย์</span><strong>{PAYMENT_ACCOUNT}</strong></div><button type="button" onClick={copyPaymentAccount}>{copied ? "คัดลอกแล้ว ✓" : "คัดลอก"}</button></div>
+                    <p>ชื่อบัญชี: {PAYMENT_ACCOUNT_NAME}</p>
+                    <div className="verification-note">หลังโอนแล้วกดส่งคำขอ ระบบจะส่งบิลเข้า LINE จากนั้นส่งภาพสลิปให้พนักงานตรวจสอบค่ะ</div>
+                  </div>
+
+                  <label className="terms-row payment-confirm"><input type="checkbox" checked={paymentAcknowledged} onChange={(event) => { setPaymentAcknowledged(event.target.checked); setError(""); }} /><span>ฉันตรวจสอบยอดมัดจำและเลขบัญชีแล้ว และจะส่งสลิปผ่าน LINE OA หลังส่งคำขอ</span></label>
                   <label className="terms-row consent-confirm"><input type="checkbox" checked={form.termsAccepted} onChange={(event) => updateForm("termsAccepted", event.target.checked)} /><span>ยืนยันว่าข้อมูลถูกต้อง และยินยอมให้ LOEI CAT HOTEL จัดเก็บข้อมูลส่วนบุคคลและข้อมูลสุขภาพของสัตว์เพื่อดำเนินคำขอจองและการดูแล</span></label>
-                  <div className="review-save-note"><span aria-hidden="true">✓</span><p><b>เมื่อกดบันทึก ระบบจะส่งข้อมูลเข้า Supabase</b><small>ข้อมูลจะอยู่ในสถานะรอพนักงานตรวจสอบ และป้องกันการกดบันทึกซ้ำด้วยรหัสคำขอเดียวกัน</small></p></div>
+                  <div className="review-save-note"><span aria-hidden="true">✓</span><p><b>ระบบจะบันทึกคำขอและรายการมัดจำรอตรวจสอบ</b><small>พนักงานจะตรวจสลิปและห้องว่างก่อนยืนยันการจองผ่าน LINE OA</small></p></div>
                 </section>
               )}
 
@@ -498,31 +534,54 @@ export function BookingApp() {
               <div className="actions">
                 {step > 1 && <button className="button secondary" type="button" onClick={goBack} disabled={submitting}>ย้อนกลับ</button>}
                 <button className="button primary" type="button" onClick={goNext} disabled={submitting} aria-busy={submitting}>
-                  {step === 1 && "ตรวจห้องว่าง"}{step === 2 && "ยืนยันห้องและแพ็กเกจ"}{step === 3 && "ตรวจสอบข้อมูล"}{step === 4 && (submitting ? "กำลังบันทึก..." : "บันทึกคำขอจอง")}{!submitting && <span aria-hidden="true">→</span>}
+                  {step === 1 && "ตรวจห้องว่าง"}{step === 2 && "ยืนยันห้องและแพ็กเกจ"}{step === 3 && "ตรวจสอบข้อมูล"}{step === 4 && (submitting ? "กำลังส่งคำขอ..." : "ส่งคำขอและรับบิล")}{!submitting && <span aria-hidden="true">→</span>}
                 </button>
               </div>
             </>
           ) : (
             <section className="success-view" aria-live="polite">
-              <div className="success-mark" aria-hidden="true">✓</div>
-              <span className="step-kicker">บันทึกข้อมูลสำเร็จ</span>
-              <h2>ได้รับคำขอจองแล้วค่ะ</h2>
-              <p>{lineMessageSent
-                ? "ส่งปุ่มยืนยันไปที่ห้องแชต LINE OA แล้ว กรุณากลับไปกดปุ่มเพื่อยืนยันคำขอค่ะ"
-                : "บันทึกข้อมูลแล้ว แต่ยังส่งปุ่มเข้า LINE ไม่สำเร็จ กรุณาเปิดหน้าจองจากเมนู LINE OA หรือติดต่อพนักงานค่ะ"}</p>
-              <div className="prototype-code"><span>รหัสคำขอจอง</span><strong>{bookingCode}</strong></div>
+              <article className="receipt-card">
+                <header className="receipt-brand"><strong>LOEI CAT HOTEL</strong><small>โรงแรมแมวเมืองเลยยินดีให้บริการ</small></header>
+                <div className="receipt-check" aria-hidden="true">✓</div>
+                <h2>รับคำขอจองแล้ว</h2>
+                <p className="receipt-subtitle">ใช้หน้าจอนี้และบิลใน LINE ส่งสลิปให้พนักงาน</p>
+                <div className="receipt-code"><span>รหัสคำขอจอง</span><strong>{bookingCode}</strong></div>
+
+                <dl className="receipt-summary">
+                  <div><dt>ผู้ปกครอง</dt><dd>{form.guardianName}</dd></div>
+                  <div><dt>เบอร์โทร</dt><dd>{form.phone}</dd></div>
+                  <div><dt>น้องแมว</dt><dd>{form.petNames.join(", ")}</dd></div>
+                  <div><dt>จำนวน / ห้อง</dt><dd>{form.petCount} ตัว · {form.roomType === "condo" ? "ห้องคอนโด" : "ห้องวิลล่า"}</dd></div>
+                  <div><dt>แพ็กเกจ</dt><dd>{form.mode === "hourly" ? "ฝากไม่เกิน 6 ชั่วโมง" : selectedRate.title}</dd></div>
+                </dl>
+
+                <div className="receipt-dates">
+                  <div><span>{form.mode === "hourly" ? "วันที่ฝาก" : "วันเข้าพัก"}</span><strong>{formatReceiptDate(form.mode === "hourly" ? form.visitDate : form.checkInDate)}</strong><small>{form.mode === "hourly" ? `${form.startTime} น.` : "08:30–18:00 น."}</small></div>
+                  <div><span>{form.mode === "hourly" ? "เวลารับกลับ" : "วันรับกลับ"}</span><strong>{form.mode === "hourly" ? `${form.endTime} น.` : formatReceiptDate(form.checkOutDate)}</strong><small>{form.mode === "hourly" ? "ภายในวันเดียวกัน" : "12:00–18:00 น."}</small></div>
+                </div>
+
+                <div className="receipt-payments">
+                  <div><span>มัดจำรอตรวจสอบ</span><strong>{formatBaht(deposit)}</strong></div>
+                  <div><span>ชำระวันเช็กอิน</span><strong>{formatBaht(total - deposit)}</strong></div>
+                </div>
+
+                <div className="receipt-account">
+                  <span>ชำระมัดจำผ่านพร้อมเพย์</span>
+                  <strong>{PAYMENT_ACCOUNT}</strong>
+                  <small>ชื่อบัญชี: {PAYMENT_ACCOUNT_NAME}</small>
+                  <button type="button" onClick={copyPaymentAccount}>{copied ? "คัดลอกแล้ว ✓" : "คัดลอกเลขบัญชี"}</button>
+                </div>
+
+                <div className="receipt-prep"><b>เตรียมก่อนเข้าพัก</b><p>วัคซีนอย่างน้อย 1 เข็ม · ป้องกันเห็บหมัดประจำเดือน · อาบน้ำทำความสะอาด · เตรียมอาหาร/ทรายหากเลือกนำมาเอง</p></div>
+              </article>
 
               <div className={`line-confirmation-card ${lineMessageSent ? "sent" : "missing"}`}>
                 <span className="line-confirmation-dot" aria-hidden="true">{lineMessageSent ? "✓" : "!"}</span>
-                <div>
-                  <b>{lineMessageSent ? "ปุ่มรออยู่ใน LINE แล้ว" : "ยังไม่ได้เชื่อมคำขอกับ LINE"}</b>
-                  <small>ปุ่ม: “ยืนยันการจอง — ชำระวันเช็กอิน”</small>
-                </div>
+                <div><b>{lineMessageSent ? "ส่งบิลเข้า LINE แล้ว" : "ยังส่งบิลเข้า LINE ไม่สำเร็จ"}</b><small>{lineMessageSent ? "เปิดแชตเพื่อส่งสลิปให้พนักงานตรวจสอบ" : "ใช้รหัสคำขอด้านบนติดต่อพนักงานได้ค่ะ"}</small></div>
               </div>
 
-              <div className="next-steps"><b>ขั้นตอนถัดไป</b><ol><li>กลับไปที่ห้องแชต LOEI CAT HOTEL</li><li>กด “ยืนยันการจอง — ชำระวันเช็กอิน”</li><li>รอพนักงานตรวจสอบและยืนยันห้องว่าง</li><li>ชำระเต็มจำนวนในวันเช็กอินหลังได้รับการยืนยันห้อง</li></ol></div>
-              <button className="button primary full" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); setLineMessageSent(null); requestId.current = null; }}>เริ่มคำขอใหม่</button>
-              <a className="line-link" href="https://line.me/R/ti/p/%40002lffmk">เปิด LINE เพื่อกดยืนยัน <span>↗</span></a>
+              <a className="button primary full receipt-line-button" href={`https://line.me/R/oaMessage/%40002lffmk/?${encodeURIComponent(`ส่งสลิปมัดจำ รหัส ${bookingCode}`)}`}>ส่งสลิปมัดจำใน LINE OA</a>
+              <button className="button secondary full receipt-new-button" type="button" onClick={() => { setStep(1); setForm(initialForm); setBookingCode(""); setLineMessageSent(null); setPaymentAcknowledged(false); setCopied(false); requestId.current = null; }}>เริ่มคำขอใหม่</button>
             </section>
           )}
         </div>

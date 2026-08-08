@@ -122,15 +122,46 @@ async function verifyLineIdToken(idToken: string | undefined): Promise<LineIdent
   return { userId: payload.sub, displayName: payload.name?.trim() || null };
 }
 
-async function sendLinePaymentChoice(
+function formatLineDateTime(value: string): string {
+  const date = new Date(value);
+  const day = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok", day: "numeric", month: "short", year: "numeric"
+  }).format(date);
+  const time = new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", hour12: false
+  }).format(date);
+  return `${day} · ${time} น.`;
+}
+
+function flexDetailRow(label: string, value: string) {
+  return {
+    type: "box",
+    layout: "horizontal",
+    spacing: "md",
+    contents: [
+      { type: "text", text: label, size: "sm", color: "#8B7B86", flex: 3 },
+      { type: "text", text: value, size: "sm", color: "#2C1826", weight: "bold", align: "end", wrap: true, flex: 7 }
+    ]
+  };
+}
+
+async function sendLineBookingReceipt(
   lineUserId: string,
   bookingId: string,
   bookingCode: string,
-  totalAmount: number
+  input: ReturnType<typeof validateRequest>
 ): Promise<boolean> {
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken) return false;
-  const amount = totalAmount.toLocaleString("th-TH");
+  const total = input.totalAmount.toLocaleString("th-TH");
+  const deposit = input.depositAmount.toLocaleString("th-TH");
+  const balance = (input.totalAmount - input.depositAmount).toLocaleString("th-TH");
+  const room = input.roomType === "condo" ? "ห้องคอนโด" : "ห้องวิลล่า";
+  const packageName = input.ratePlan === "HOTEL_SUPPLIED"
+    ? "โรงแรมจัดเตรียมให้"
+    : input.ratePlan === "OWNER_SUPPLIED" ? "นำอาหารและทรายมาเอง" : "ฝากรายชั่วโมง";
+  const slipMessage = encodeURIComponent(`ส่งสลิปมัดจำ รหัส ${bookingCode}`);
+
   const response = await fetch("https://api.line.me/v2/bot/message/push", {
     method: "POST",
     headers: {
@@ -142,53 +173,84 @@ async function sendLinePaymentChoice(
       to: lineUserId,
       messages: [{
         type: "flex",
-        altText: `ยืนยันคำขอจอง ${bookingCode} และเลือกชำระวันเช็กอิน`,
+        altText: `ใบรับคำขอจอง ${bookingCode} · มัดจำ ${deposit} บาท`,
         contents: {
           type: "bubble",
+          size: "mega",
           header: {
             type: "box",
             layout: "vertical",
             backgroundColor: "#F8C8E8",
-            paddingAll: "18px",
+            paddingAll: "16px",
             contents: [
               { type: "text", text: "LOEI CAT HOTEL", weight: "bold", color: "#3D1632", size: "lg" },
-              { type: "text", text: "ยืนยันคำขอจอง", color: "#6E365C", size: "sm", margin: "sm" }
+              { type: "text", text: "ใบรับคำขอจอง · รอตรวจสอบ", color: "#6E365C", size: "sm", margin: "xs" }
             ]
           },
           body: {
             type: "box",
             layout: "vertical",
-            paddingAll: "18px",
+            paddingAll: "16px",
             spacing: "md",
             contents: [
-              { type: "text", text: bookingCode, weight: "bold", size: "xl", color: "#2C1826" },
-              { type: "text", text: `ยอดชำระวันเช็กอิน ${amount} บาท`, size: "sm", color: "#6D5A68", wrap: true },
-              { type: "text", text: "กดปุ่มเพื่อยืนยันคำขอและเลือกชำระเต็มจำนวนในวันเช็กอิน จากนั้นรอพนักงานตรวจสอบห้องว่างค่ะ", size: "sm", color: "#6D5A68", wrap: true }
+              { type: "text", text: "รับคำขอจองแล้ว ✓", weight: "bold", size: "lg", color: "#2C1826", align: "center" },
+              { type: "text", text: bookingCode, weight: "bold", size: "xl", color: "#7B315F", align: "center" },
+              { type: "separator", color: "#E8DEE5", margin: "sm" },
+              flexDetailRow("ผู้ปกครอง", input.guardianName),
+              flexDetailRow("เบอร์โทร", input.phone),
+              flexDetailRow("น้องแมว", input.petNames.join(", ")),
+              flexDetailRow("จำนวน / ห้อง", `${input.petNames.length} ตัว · ${room}`),
+              flexDetailRow("แพ็กเกจ", packageName),
+              { type: "separator", color: "#E8DEE5", margin: "sm" },
+              flexDetailRow("เข้าพัก", formatLineDateTime(input.checkInAt)),
+              flexDetailRow("รับกลับ", formatLineDateTime(input.checkOutAt)),
+              {
+                type: "box", layout: "horizontal", spacing: "sm", margin: "md",
+                contents: [
+                  { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#F4E4EE", contents: [
+                    { type: "text", text: "มัดจำรอตรวจสอบ", size: "xs", color: "#7B315F" },
+                    { type: "text", text: `${deposit} บาท`, size: "lg", weight: "bold", color: "#7B315F", margin: "xs" }
+                  ] },
+                  { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#FFF1E8", contents: [
+                    { type: "text", text: "ชำระวันเช็กอิน", size: "xs", color: "#A75A2E" },
+                    { type: "text", text: `${balance} บาท`, size: "lg", weight: "bold", color: "#A75A2E", margin: "xs" }
+                  ] }
+                ]
+              },
+              { type: "text", text: `ค่าบริการรวม ${total} บาท`, size: "sm", weight: "bold", color: "#2C1826", align: "end" },
+              {
+                type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "md", backgroundColor: "#F3F7F4", spacing: "xs",
+                contents: [
+                  { type: "text", text: "ชำระมัดจำผ่านพร้อมเพย์", size: "sm", weight: "bold", color: "#315B4B" },
+                  { type: "text", text: "KPS004KB000002201754", size: "md", weight: "bold", color: "#173C30", wrap: true },
+                  { type: "text", text: "บริษัท เลิฟเพ็ท โกลบอลพลัส จำกัด", size: "xs", color: "#61776E", wrap: true }
+                ]
+              },
+              { type: "text", text: "หมายเหตุ: บิลนี้เป็นใบรับคำขอ พนักงานจะยืนยันห้องหลังตรวจสลิปและห้องว่าง", size: "xs", color: "#8B7B86", wrap: true }
             ]
           },
           footer: {
             type: "box",
             layout: "vertical",
-            paddingAll: "18px",
-            contents: [{
-              type: "button",
-              style: "primary",
-              color: "#7B315F",
-              height: "sm",
-              action: {
-                type: "postback",
-                label: "ยืนยันการจอง — ชำระวันเช็กอิน",
+            paddingAll: "16px",
+            spacing: "sm",
+            contents: [
+              { type: "button", style: "primary", color: "#7B315F", height: "sm", action: {
+                type: "uri", label: "ส่งสลิปมัดจำ", uri: `https://line.me/R/oaMessage/%40002lffmk/?${slipMessage}`
+              } },
+              { type: "button", style: "secondary", height: "sm", action: {
+                type: "postback", label: "ยืนยัน — ชำระวันเช็กอิน",
                 data: `action=confirm_pay_checkin&booking_code=${encodeURIComponent(bookingCode)}`,
                 displayText: `ยืนยันการจอง ${bookingCode} — ชำระวันเช็กอิน`
-              }
-            }]
+              } }
+            ]
           }
         }
       }]
     })
   });
   if (response.ok || response.status === 409) return true;
-  console.error("LINE push failed", response.status, (await response.text()).slice(0, 500));
+  console.error("LINE receipt push failed", response.status, (await response.text()).slice(0, 500));
   return false;
 }
 async function removeRows(table: string, column: string, ids: string[]): Promise<void> {
@@ -366,7 +428,7 @@ export async function POST(request: Request) {
         deposit_amount: input.depositAmount,
         balance_amount: input.totalAmount - input.depositAmount,
         deposit_due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        customer_notes: `ห้องที่เลือก: ${input.roomType}; การดูแล: ${input.careFlags.join(", ") || "ไม่มี"}`,
+        customer_notes: `ห้องที่เลือก: ${input.roomType}; การดูแล: ${input.careFlags.join(", ") || "ไม่มี"}; การชำระ: มัดจำ 50% รอตรวจสอบสลิป`,
         idempotency_key: input.idempotencyKey
       })
     });
@@ -396,13 +458,24 @@ export async function POST(request: Request) {
       })
     });
 
+    await supabaseRequest("payments", {
+      method: "POST",
+      body: JSON.stringify({
+        booking_id: booking.booking_id,
+        payment_type: "deposit",
+        amount: input.depositAmount,
+        status: "pending",
+        payment_method: "promptpay"
+      })
+    });
+
     await supabaseRequest("booking_status_history", {
       method: "POST",
       body: JSON.stringify({
         booking_id: booking.booking_id,
         previous_status: null,
         next_status: "draft",
-        reason: "ลูกค้าส่งคำขอผ่านหน้าเว็บ",
+        reason: "ลูกค้าส่งคำขอและได้รับข้อมูลชำระมัดจำผ่านหน้าเว็บ",
         actor_type: "customer"
       })
     });
@@ -410,11 +483,11 @@ export async function POST(request: Request) {
     let lineMessageSent = false;
     if (lineIdentity) {
       try {
-        lineMessageSent = await sendLinePaymentChoice(
+        lineMessageSent = await sendLineBookingReceipt(
           lineIdentity.userId,
           booking.booking_id,
           booking.booking_code,
-          input.totalAmount
+          input
         );
       } catch (lineError) {
         console.error("Unable to send LINE confirmation button", lineError);
@@ -430,6 +503,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (created.bookingId) {
       await removeRows("booking_status_history", "booking_id", [created.bookingId]);
+      await removeRows("payments", "booking_id", [created.bookingId]);
       await removeRows("emergency_consent", "booking_id", [created.bookingId]);
       await removeRows("booking_pets", "booking_id", [created.bookingId]);
       await removeRows("bookings", "booking_id", [created.bookingId]);

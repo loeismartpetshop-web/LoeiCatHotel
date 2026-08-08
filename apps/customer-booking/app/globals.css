@@ -421,3 +421,96 @@ button { color: inherit; }
   .review-edit-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
   .review-edit-actions button { padding-inline: 5px; white-space: nowrap; }
 }
+.review-payment-card { text-align: left; }
+.payment-amount-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-top: 14px; padding: 11px 13px; border-radius: 11px; color: var(--forest-800); background: #fff; }
+.payment-amount-row span { font-size: 12px; }
+.payment-amount-row strong { font-size: 20px; }
+.payment-confirm { padding: 13px; border: 1px solid rgba(var(--primary-rgb), 0.22); border-radius: 13px; color: var(--ink); background: var(--terracotta-100); }
+
+.receipt-card { padding: 20px; border: 1px solid var(--line); border-radius: 20px; text-align: center; background: #fffefb; box-shadow: 0 16px 45px rgba(42, 31, 38, 0.08); }
+.receipt-brand strong, .receipt-brand small { display: block; }
+.receipt-brand strong { color: var(--forest-900); font-family: Georgia, serif; font-size: 18px; letter-spacing: 0.02em; }
+.receipt-brand small { margin-top: 2px; color: var(--muted); font-size: 11px; }
+.receipt-check { width: 48px; height: 48px; display: grid; place-items: center; margin: 13px auto 8px; border-radius: 50%; color: var(--forest-700); background: var(--forest-100); font-size: 27px; }
+.receipt-card h2 { margin: 0; font-family: "Pridi", Georgia, serif; font-size: 25px; font-weight: 500; }
+.receipt-subtitle { margin: 1px 0 12px; color: var(--muted); font-size: 11px; }
+.receipt-code { padding: 10px 12px; border: 1px dashed var(--forest-700); border-radius: 12px; background: var(--forest-50); }
+.receipt-code span, .receipt-code strong { display: block; }
+.receipt-code span { color: var(--muted); font-size: 10px; }
+.receipt-code strong { margin-top: 2px; color: var(--forest-800); font-size: 19px; letter-spacing: 0.04em; }
+.receipt-summary { margin: 10px 0 0; border: 1px solid var(--line); border-radius: 13px; overflow: hidden; }
+.receipt-summary div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 8px 11px; border-bottom: 1px solid #ece9e5; }
+.receipt-summary div:last-child { border-bottom: 0; }
+.receipt-summary dt { color: var(--muted); text-align: left; font-size: 11px; }
+.receipt-summary dd { margin: 0; text-align: right; font-size: 12px; font-weight: 700; }
+.receipt-dates, .receipt-payments { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.receipt-dates > div, .receipt-payments > div { padding: 10px 8px; border: 1px solid var(--line); border-radius: 12px; }
+.receipt-dates span, .receipt-dates strong, .receipt-dates small, .receipt-payments span, .receipt-payments strong { display: block; }
+.receipt-dates span, .receipt-payments span { color: var(--muted); font-size: 10px; }
+.receipt-dates strong { margin-top: 3px; font-size: 13px; }
+.receipt-dates small { margin-top: 1px; color: var(--muted); font-size: 10px; }
+.receipt-payments > div:first-child { color: var(--forest-800); background: var(--forest-50); }
+.receipt-payments > div:last-child { color: var(--terracotta); background: var(--terracotta-100); }
+.receipt-payments strong { margin-top: 4px; font-size: 17px; }
+.receipt-account { margin-top: 9px; padding: 12px; border: 1px solid #9eb9aa; border-radius: 13px; text-align: left; background: #f3f7f4; }
+.receipt-account span, .receipt-account strong, .receipt-account small { display: block; }
+.receipt-account span { font-size: 11px; font-weight: 700; }
+.receipt-account strong { margin-top: 4px; font-size: 15px; word-break: break-all; }
+.receipt-account small { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.receipt-account button { width: 100%; margin-top: 9px; padding: 9px; border: 1px solid #9eb9aa; border-radius: 9px; color: var(--forest-800); background: #fff; font-size: 11px; font-weight: 700; cursor: pointer; }
+.receipt-prep { margin-top: 9px; padding: 11px; border: 1px solid var(--line); border-radius: 12px; text-align: left; background: var(--cream-50); }
+.receipt-prep b { font-size: 11px; }
+.receipt-prep p { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.receipt-card + .line-confirmation-card { margin-top: 12px; }
+.receipt-line-button { text-decoration: none; }
+.receipt-new-button { margin-top: 9px; }
+
+@media (max-width: 640px) {
+  .mobile-header .brand-lockup strong { font-size: 14px; }
+  .mobile-header .brand-lockup span, .line-badge { font-size: 12px; }
+  .stepper-item small { font-size: 11px; }
+  .step-heading p, .success-view > p { font-size: 15px; line-height: 1.5; }
+  .booking-card small { font-size: 12px; line-height: 1.45; }
+  .segmented-control span, .field-title { font-size: 15px; }
+  .segmented-control small, .field-title-row small, .counter-block > div:first-child small { font-size: 13px; }
+  .field-label { font-size: 14px; }
+  .counter output span { font-size: 13px; }
+  .availability-note b, .document-note b { font-size: 14px; }
+  .availability-note small, .document-note small { font-size: 12px; }
+  .selection-card strong { font-size: 16px; }
+  .selection-card small, .selection-card em, .recommend-chip { font-size: 12px; line-height: 1.4; }
+  .warning-note b, .rate-copy strong, .hourly-rate span { font-size: 14px; }
+  .warning-note span, .rate-copy small, .rate-price small, .hourly-rate strong small { font-size: 12px; }
+  .check-grid label, .consent-row, .terms-row { font-size: 14px; line-height: 1.5; }
+  .summary-top span { font-size: 15px; }
+  .summary-top small { font-size: 12px; }
+  .summary-card dt { font-size: 13px; }
+  .summary-card dd { font-size: 14px; line-height: 1.4; }
+  .summary-card dl div { grid-template-columns: 92px 1fr; }
+  .money-row { font-size: 14px; }
+  .money-row strong { font-size: 17px; }
+  .deposit-row strong { font-size: 21px; }
+  .calculation-note { font-size: 12px; line-height: 1.5; }
+  .payment-title b { font-size: 15px; }
+  .payment-title small, .promptpay-row span, .payment-card > p, .verification-note { font-size: 12px; line-height: 1.45; }
+  .payment-amount-row span { font-size: 14px; }
+  .payment-amount-row strong { font-size: 22px; }
+  .promptpay-row strong { font-size: 15px; }
+  .promptpay-row button, .review-edit-actions button { font-size: 12px; }
+  .review-save-note b, .next-steps b, .line-confirmation-card b { font-size: 14px; }
+  .review-save-note small, .next-steps ol, .line-confirmation-card small { font-size: 12px; line-height: 1.5; }
+  .error-message { font-size: 13px; }
+  .button, .actions .button { font-size: 15px; }
+  .receipt-card { padding: 15px 13px; border-radius: 16px; }
+  .receipt-brand strong { font-size: 19px; }
+  .receipt-brand small, .receipt-subtitle { font-size: 12px; }
+  .receipt-card h2 { font-size: 25px; }
+  .receipt-code span, .receipt-summary dt, .receipt-dates span, .receipt-dates small, .receipt-payments span, .receipt-account small, .receipt-prep p { font-size: 12px; }
+  .receipt-code strong { font-size: 20px; }
+  .receipt-summary div { grid-template-columns: 105px 1fr; padding: 9px 10px; }
+  .receipt-summary dd, .receipt-dates strong { font-size: 14px; }
+  .receipt-payments strong { font-size: 18px; }
+  .receipt-account span, .receipt-prep b { font-size: 14px; }
+  .receipt-account strong { font-size: 15px; }
+  .receipt-account button { min-height: 43px; font-size: 13px; }
+}

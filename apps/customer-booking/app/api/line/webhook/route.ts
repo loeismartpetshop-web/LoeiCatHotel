@@ -73,7 +73,11 @@ async function replyText(replyToken: string | undefined, text: string): Promise<
 function appendPaymentChoice(notes: string | null): string {
   const marker = "การชำระ: ชำระเต็มจำนวนวันเช็กอิน (ยืนยันผ่าน LINE)";
   if (notes?.includes(marker)) return notes;
-  return notes ? `${notes}; ${marker}` : marker;
+  const withoutDeposit = (notes ?? "")
+    .replace(/;?\s*การชำระ: มัดจำ 50% รอตรวจสอบสลิป/g, "")
+    .replace(/;\s*$/, "")
+    .trim();
+  return withoutDeposit ? `${withoutDeposit}; ${marker}` : marker;
 }
 
 async function handlePaymentConfirmation(event: LineWebhookEvent, bookingCode: string): Promise<void> {
@@ -114,6 +118,10 @@ async function handlePaymentConfirmation(event: LineWebhookEvent, bookingCode: s
         updated_at: new Date().toISOString()
       })
     });
+    await supabaseRequest(
+      `payments?booking_id=eq.${encodeURIComponent(booking.booking_id)}&payment_type=eq.deposit&status=eq.pending`,
+      { method: "PATCH", body: JSON.stringify({ status: "voided", updated_at: new Date().toISOString() }) }
+    );
     await supabaseRequest("booking_status_history", {
       method: "POST",
       body: JSON.stringify({
