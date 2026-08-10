@@ -3,6 +3,14 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import {
+  BookingsSection,
+  CustomersSection,
+  OverviewSection,
+  RoomsSection
+} from "./staff-sections";
+import type { DashboardSection, StaffDashboardData } from "./staff-sections";
+import extraStyles from "./staff-dashboard-extras.module.css";
 import styles from "./staff.module.css";
 
 const SESSION_KEY = "loei-cat-hotel-staff-session-v1";
@@ -38,6 +46,18 @@ interface DepositResponse {
   pendingDeposits: PendingDeposit[];
 }
 
+interface DashboardResponse extends StaffDashboardData {
+  staff: StaffInfo;
+}
+
+const SECTION_COPY: Record<DashboardSection, { eyebrow: string; title: string; detail: string }> = {
+  overview: { eyebrow: "TODAY OVERVIEW", title: "ภาพรวมวันนี้", detail: "สรุปคิวเข้าพัก ห้อง และงานที่ต้องติดตาม" },
+  rooms: { eyebrow: "ROOM BOARD", title: "ตารางห้อง", detail: "ดูสถานะห้องและการจัดห้องจาก Supabase" },
+  bookings: { eyebrow: "BOOKING LIST", title: "รายการจอง", detail: "ค้นหาและตรวจสถานะคำขอจองทั้งหมด" },
+  payments: { eyebrow: "PAYMENT REVIEW", title: "ตรวจสอบมัดจำ", detail: "ตรวจรูปสลิปใน LINE OA ก่อนกดยืนยันทุกครั้ง" },
+  customers: { eyebrow: "CUSTOMER & PET", title: "ลูกค้าและน้องแมว", detail: "ข้อมูลผู้ปกครอง ประวัติการจอง และน้องแมว" }
+};
+
 function formatBaht(amount: number): string {
   return `${Number(amount).toLocaleString("th-TH")} บาท`;
 }
@@ -67,6 +87,8 @@ export function StaffDashboard() {
   const [password, setPassword] = useState("");
   const [staff, setStaff] = useState<StaffInfo | null>(null);
   const [pendingDeposits, setPendingDeposits] = useState<PendingDeposit[]>([]);
+  const [dashboardData, setDashboardData] = useState<StaffDashboardData | null>(null);
+  const [activeSection, setActiveSection] = useState<DashboardSection>("overview");
   const [loading, setLoading] = useState(true);
   const [authenticating, setAuthenticating] = useState(false);
   const [confirmingCode, setConfirmingCode] = useState("");
@@ -78,28 +100,44 @@ export function StaffDashboard() {
     [pendingDeposits]
   );
 
-  const loadDeposits = async (token: string) => {
+  const loadStaffData = async (token: string) => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/staff/deposits", {
+      const requestOptions: RequestInit = {
         cache: "no-store",
         headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.status === 401 || response.status === 403) {
+      };
+      const [depositResponse, dashboardResponse] = await Promise.all([
+        fetch("/api/staff/deposits", requestOptions),
+        fetch("/api/staff/dashboard", requestOptions)
+      ]);
+      const deniedResponse = [depositResponse, dashboardResponse]
+        .find((response) => response.status === 401 || response.status === 403);
+      if (deniedResponse) {
         window.sessionStorage.removeItem(SESSION_KEY);
         setAccessToken("");
         setStaff(null);
-        throw new Error(response.status === 403
-          ? "บัญชีนี้ไม่มีสิทธิ์ตรวจการชำระเงิน"
+        throw new Error(deniedResponse.status === 403
+          ? "บัญชีนี้ไม่มีสิทธิ์เข้าใช้งาน Dashboard"
           : "เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
       }
-      const payload = await response.json() as DepositResponse & { error?: string };
-      if (!response.ok) throw new Error(payload.error ?? "โหลดรายการไม่สำเร็จ");
-      setStaff(payload.staff);
-      setPendingDeposits(payload.pendingDeposits);
+
+      const depositPayload = await depositResponse.json() as DepositResponse & { error?: string };
+      const dashboardPayload = await dashboardResponse.json() as DashboardResponse & { error?: string };
+      if (!depositResponse.ok) throw new Error(depositPayload.error ?? "โหลดรายการมัดจำไม่สำเร็จ");
+      if (!dashboardResponse.ok) throw new Error(dashboardPayload.error ?? "โหลด Dashboard ไม่สำเร็จ");
+
+      setStaff(dashboardPayload.staff ?? depositPayload.staff);
+      setPendingDeposits(depositPayload.pendingDeposits);
+      setDashboardData({
+        summary: dashboardPayload.summary,
+        rooms: dashboardPayload.rooms,
+        bookings: dashboardPayload.bookings,
+        customers: dashboardPayload.customers
+      });
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "โหลดรายการไม่สำเร็จ");
+      setError(requestError instanceof Error ? requestError.message : "โหลดข้อมูล Dashboard ไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
@@ -116,7 +154,7 @@ export function StaffDashboard() {
         const savedToken = window.sessionStorage.getItem(SESSION_KEY) ?? "";
         if (savedToken) {
           setAccessToken(savedToken);
-          await loadDeposits(savedToken);
+          await loadStaffData(savedToken);
         } else {
           setLoading(false);
         }
@@ -150,7 +188,7 @@ export function StaffDashboard() {
       window.sessionStorage.setItem(SESSION_KEY, payload.access_token);
       setAccessToken(payload.access_token);
       setPassword("");
-      await loadDeposits(payload.access_token);
+      await loadStaffData(payload.access_token);
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "เข้าสู่ระบบไม่สำเร็จ");
     } finally {
@@ -163,6 +201,8 @@ export function StaffDashboard() {
     setAccessToken("");
     setStaff(null);
     setPendingDeposits([]);
+    setDashboardData(null);
+    setActiveSection("overview");
     setSuccess("");
     setError("");
   };
@@ -185,13 +225,13 @@ export function StaffDashboard() {
         },
         body: JSON.stringify({ bookingCode: item.bookingCode })
       });
-      const payload = await response.json() as { error?: string; checkinReceiptSent?: boolean };
+      const payload = await response.json() as { error?: string };
       if (response.status === 401 || response.status === 403) {
         signOut();
         throw new Error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง");
       }
       if (!response.ok) throw new Error(payload.error ?? "ยืนยันมัดจำไม่สำเร็จ");
-      setPendingDeposits((current) => current.filter((deposit) => deposit.bookingCode !== item.bookingCode));
+      await loadStaffData(accessToken);
       setSuccess(`ยืนยันมัดจำ ${item.bookingCode} แล้ว และส่งบิลวันเช็กอินเข้า LINE ลูกค้าเรียบร้อย`);
     } catch (confirmationError) {
       setError(confirmationError instanceof Error ? confirmationError.message : "ยืนยันมัดจำไม่สำเร็จ");
@@ -219,11 +259,13 @@ export function StaffDashboard() {
             <label><span>รหัสผ่าน</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
             <button type="submit" disabled={!config || authenticating || loading}>{authenticating ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ Dashboard"}</button>
           </form>
-          <small className={styles.loginFoot}>ข้อมูลการเงินถูกตรวจสิทธิ์ผ่าน Supabase Auth ทุกครั้ง</small>
+          <small className={styles.loginFoot}>ข้อมูลหลังบ้านถูกตรวจสิทธิ์ผ่าน Supabase Auth ทุกครั้ง</small>
         </section>
       </main>
     );
   }
+
+  const copy = SECTION_COPY[activeSection];
 
   return (
     <div className={styles.dashboardShell}>
@@ -232,83 +274,65 @@ export function StaffDashboard() {
           <Image src="/loeicathotel-logo.webp" alt="" width={52} height={52} priority />
           <div><strong>LOEI CAT HOTEL</strong><span>ระบบจัดการโรงแรมแมว</span></div>
         </div>
-        <nav className={styles.nav} aria-label="เมนูหลัก">
-          <button type="button" disabled><span>⌂</span> ภาพรวมวันนี้</button>
-          <button type="button" disabled><span>▦</span> ตารางห้อง</button>
-          <button type="button" disabled><span>≡</span> รายการจอง</button>
-          <button type="button" className={styles.active}><span>฿</span> การชำระเงิน</button>
-          <button type="button" disabled><span>♙</span> ลูกค้าและแมว</button>
+        <nav className={`${styles.nav} ${extraStyles.mobileNav}`} aria-label="เมนูหลัก">
+          <button type="button" className={activeSection === "overview" ? styles.active : ""} aria-current={activeSection === "overview" ? "page" : undefined} onClick={() => setActiveSection("overview")}><span>⌂</span> ภาพรวมวันนี้</button>
+          <button type="button" className={activeSection === "rooms" ? styles.active : ""} aria-current={activeSection === "rooms" ? "page" : undefined} onClick={() => setActiveSection("rooms")}><span>▦</span> ตารางห้อง</button>
+          <button type="button" className={activeSection === "bookings" ? styles.active : ""} aria-current={activeSection === "bookings" ? "page" : undefined} onClick={() => setActiveSection("bookings")}><span>≡</span> รายการจอง</button>
+          <button type="button" className={activeSection === "payments" ? styles.active : ""} aria-current={activeSection === "payments" ? "page" : undefined} onClick={() => setActiveSection("payments")}><span>฿</span> การชำระเงิน{pendingDeposits.length ? <b className={styles.pendingBadge}>{pendingDeposits.length}</b> : null}</button>
+          <button type="button" className={activeSection === "customers" ? styles.active : ""} aria-current={activeSection === "customers" ? "page" : undefined} onClick={() => setActiveSection("customers")}><span>♙</span> ลูกค้าและแมว</button>
         </nav>
         <div className={styles.sidebarFoot}><i /> เชื่อมต่อ Supabase และ LINE OA</div>
       </aside>
 
       <main className={styles.main}>
         <header className={styles.topbar}>
-          <div><span className={styles.eyebrow}>PAYMENT REVIEW</span><h1>ตรวจสอบมัดจำ</h1><p>ตรวจรูปสลิปใน LINE OA ก่อนกดยืนยันทุกครั้ง</p></div>
+          <div><span className={styles.eyebrow}>{copy.eyebrow}</span><h1>{copy.title}</h1><p>{copy.detail}</p></div>
           <div className={styles.userActions}>
             <div><strong>{staff?.fullName ?? "พนักงาน"}</strong><span>{roleLabel(staff?.role ?? "")}</span></div>
-            <button type="button" onClick={() => void loadDeposits(accessToken)} disabled={loading}>รีเฟรช</button>
+            <button type="button" onClick={() => void loadStaffData(accessToken)} disabled={loading}>รีเฟรช</button>
             <button type="button" onClick={signOut}>ออกจากระบบ</button>
           </div>
         </header>
 
         {success && <div className={styles.successBox} role="status">✓ {success}</div>}
         {error && <div className={styles.errorBox} role="alert">{error}</div>}
+        {loading && <div className={styles.emptyState}><span className={styles.spinner} /> กำลังโหลดข้อมูลจาก Supabase...</div>}
 
-        <section className={styles.stats} aria-label="สรุปรายการรอตรวจ">
-          <article><span>รอตรวจสลิป</span><strong>{pendingDeposits.length}</strong><small>รายการ</small></article>
-          <article><span>ยอดมัดจำรอตรวจ</span><strong>{formatBaht(pendingTotal)}</strong><small>ตรวจจากภาพใน LINE OA</small></article>
-          <article><span>หลังยืนยัน</span><strong>ส่งทันที</strong><small>บิลยอดคงเหลือเข้าหาลูกค้า</small></article>
-        </section>
+        {!loading && dashboardData && activeSection === "overview" && <OverviewSection data={dashboardData} />}
+        {!loading && dashboardData && activeSection === "rooms" && <RoomsSection rooms={dashboardData.rooms} />}
+        {!loading && dashboardData && activeSection === "bookings" && <BookingsSection bookings={dashboardData.bookings} />}
+        {!loading && dashboardData && activeSection === "customers" && <CustomersSection customers={dashboardData.customers} />}
 
-        <section className={styles.reviewPanel}>
-          <header>
-            <div><span>DEPOSIT QUEUE</span><h2>รายการมัดจำรอตรวจ</h2></div>
-            <a href="https://manager.line.biz/" target="_blank" rel="noreferrer">เปิด LINE OA Manager ↗</a>
-          </header>
+        {!loading && activeSection === "payments" && (
+          <>
+            <section className={styles.stats} aria-label="สรุปรายการรอตรวจ">
+              <article><span>รอตรวจสลิป</span><strong>{pendingDeposits.length}</strong><small>รายการ</small></article>
+              <article><span>ยอดมัดจำรอตรวจ</span><strong>{formatBaht(pendingTotal)}</strong><small>ตรวจจากภาพใน LINE OA</small></article>
+              <article><span>หลังยืนยัน</span><strong>ส่งทันที</strong><small>บิลยอดคงเหลือเข้าหาลูกค้า</small></article>
+            </section>
 
-          {loading ? (
-            <div className={styles.emptyState}><span className={styles.spinner} /><h3>กำลังโหลดรายการ...</h3></div>
-          ) : pendingDeposits.length === 0 ? (
-            <div className={styles.emptyState}><div>✓</div><h3>ไม่มีสลิปรอตรวจ</h3><p>รายการใหม่จะขึ้นหลังลูกค้าส่งสลิปและกดยืนยันมัดจำใน LINE</p></div>
-          ) : (
-            <div className={styles.depositList}>
-              {pendingDeposits.map((item) => (
-                <article className={styles.depositCard} key={item.bookingId}>
-                  <div className={styles.depositHeader}>
-                    <div><span>รหัสการจอง</span><strong>{item.bookingCode}</strong></div>
-                    <span className={styles.pendingBadge}>รอตรวจสลิป</span>
-                  </div>
-                  <div className={styles.depositGrid}>
-                    <dl>
-                      <div><dt>ผู้ปกครอง</dt><dd>{item.customerName}</dd></div>
-                      <div><dt>เบอร์โทร</dt><dd>{item.phone}</dd></div>
-                      <div><dt>น้องแมว</dt><dd>{item.petNames.length ? item.petNames.join(", ") : `${item.petCount} ตัว`}</dd></div>
-                      <div><dt>เข้าพัก</dt><dd>{formatDateTime(item.checkInAt)}</dd></div>
-                      <div><dt>รับกลับ</dt><dd>{formatDateTime(item.checkOutAt)}</dd></div>
-                    </dl>
-                    <div className={styles.amountCard}>
-                      <span>ยอดมัดจำที่ต้องตรงกับสลิป</span>
-                      <strong>{formatBaht(item.depositAmount)}</strong>
-                      <small>ยอดคงเหลือวันเช็กอิน {formatBaht(item.balanceAmount)}</small>
-                    </div>
-                  </div>
-                  {!item.hasLineAccount && <div className={styles.warningBox}>บัญชีลูกค้าไม่มี LINE user ID จึงยังส่งบิลใบที่สองไม่ได้</div>}
-                  <footer>
-                    <span>ลูกค้าแจ้งเมื่อ {formatDateTime(item.notifiedAt)}</span>
-                    <button
-                      type="button"
-                      disabled={!item.hasLineAccount || Boolean(confirmingCode)}
-                      onClick={() => void confirmDeposit(item)}
-                    >
-                      {confirmingCode === item.bookingCode ? "กำลังยืนยันและส่งบิล..." : "✓ ยืนยันสลิปและส่งบิลใบที่สอง"}
-                    </button>
-                  </footer>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+            <section className={styles.reviewPanel}>
+              <header><div><span>DEPOSIT QUEUE</span><h2>รายการมัดจำรอตรวจ</h2></div><a href="https://manager.line.biz/" target="_blank" rel="noreferrer">เปิด LINE OA Manager ↗</a></header>
+              {pendingDeposits.length === 0 ? (
+                <div className={styles.emptyState}><div>✓</div><h3>ไม่มีสลิปรอตรวจ</h3><p>รายการใหม่จะขึ้นหลังลูกค้าส่งสลิปและกดยืนยันมัดจำใน LINE</p></div>
+              ) : (
+                <div className={styles.depositList}>
+                  {pendingDeposits.map((item) => (
+                    <article className={styles.depositCard} key={item.bookingId}>
+                      <div className={styles.depositHeader}><div><span>รหัสการจอง</span><strong>{item.bookingCode}</strong></div><span className={styles.pendingBadge}>รอตรวจสลิป</span></div>
+                      <div className={styles.depositGrid}>
+                        <dl><div><dt>ผู้ปกครอง</dt><dd>{item.customerName}</dd></div><div><dt>เบอร์โทร</dt><dd>{item.phone}</dd></div><div><dt>น้องแมว</dt><dd>{item.petNames.length ? item.petNames.join(", ") : `${item.petCount} ตัว`}</dd></div><div><dt>เข้าพัก</dt><dd>{formatDateTime(item.checkInAt)}</dd></div><div><dt>รับกลับ</dt><dd>{formatDateTime(item.checkOutAt)}</dd></div></dl>
+                        <div className={styles.amountCard}><span>ยอดมัดจำที่ต้องตรงกับสลิป</span><strong>{formatBaht(item.depositAmount)}</strong><small>ยอดคงเหลือวันเช็กอิน {formatBaht(item.balanceAmount)}</small></div>
+                      </div>
+                      {!item.hasLineAccount && <div className={styles.warningBox}>บัญชีลูกค้าไม่มี LINE user ID จึงยังส่งบิลใบที่สองไม่ได้</div>}
+                      <footer><span>ลูกค้าแจ้งเมื่อ {formatDateTime(item.notifiedAt)}</span><button type="button" disabled={!item.hasLineAccount || Boolean(confirmingCode)} onClick={() => void confirmDeposit(item)}>{confirmingCode === item.bookingCode ? "กำลังยืนยันและส่งบิล..." : "✓ ยืนยันสลิปและส่งบิลใบที่สอง"}</button></footer>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </main>
     </div>
   );

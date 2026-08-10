@@ -1,0 +1,247 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import styles from "./staff-sections.module.css";
+
+export type DashboardSection = "overview" | "rooms" | "bookings" | "payments" | "customers";
+
+export interface DashboardRoom {
+  roomId: string;
+  roomCode: string;
+  displayName: string;
+  roomType: string;
+  minimumPets: number;
+  maximumPets: number;
+  status: string;
+  occupancy: string;
+  bookingCode: string | null;
+  customerName: string | null;
+  petCount: number | null;
+  occupiedFrom: string | null;
+  occupiedUntil: string | null;
+}
+
+export interface DashboardBooking {
+  bookingId: string;
+  bookingCode: string;
+  status: string;
+  source: string;
+  customerName: string;
+  phone: string;
+  petNames: string[];
+  totalPets: number;
+  roomType: string | null;
+  roomNames: string[];
+  checkInAt: string;
+  checkOutAt: string;
+  totalAmount: number;
+  depositAmount: number;
+  balanceAmount: number;
+  createdAt: string;
+}
+
+export interface DashboardCustomer {
+  customerId: string;
+  fullName: string;
+  preferredName: string | null;
+  phone: string;
+  lineDisplayName: string | null;
+  hasLineAccount: boolean;
+  pets: Array<{
+    petId: string;
+    petName: string;
+    sex: string | null;
+    breed: string | null;
+    ageText: string | null;
+  }>;
+  bookingCount: number;
+  latestBookingAt: string | null;
+  createdAt: string;
+}
+
+export interface StaffDashboardData {
+  summary: {
+    todayCheckIns: number;
+    todayCheckOuts: number;
+    activeStays: number;
+    upcomingBookings: number;
+    totalRooms: number;
+    occupiedRooms: number;
+    unallocatedBookings: number;
+    totalCustomers: number;
+    totalPets: number;
+  };
+  rooms: DashboardRoom[];
+  bookings: DashboardBooking[];
+  customers: DashboardCustomer[];
+}
+
+function formatBaht(amount: number): string {
+  return `${Number(amount).toLocaleString("th-TH")} บาท`;
+}
+
+function formatDateTime(value: string): string {
+  return new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(value));
+}
+
+function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: "แบบร่าง",
+    held: "ล็อกห้องชั่วคราว",
+    pending_deposit: "รอตรวจมัดจำ",
+    confirmed: "ยืนยันแล้ว",
+    checked_in: "กำลังเข้าพัก",
+    checked_out: "รับกลับแล้ว",
+    cancellation_review: "ตรวจสอบยกเลิก",
+    cancelled: "ยกเลิก",
+    expired: "หมดอายุ"
+  };
+  return labels[status] ?? status;
+}
+
+function roomTypeLabel(roomType: string | null): string {
+  if (roomType === "villa") return "ห้องวิลล่า";
+  if (roomType === "condo") return "ห้องคอนโด";
+  if (roomType === "reserve") return "ห้องสำรอง";
+  return "ยังไม่ระบุ";
+}
+
+function EmptyBlock({ title, detail }: { title: string; detail: string }) {
+  return <div className={styles.sectionEmpty}><div>✓</div><h3>{title}</h3><p>{detail}</p></div>;
+}
+
+export function OverviewSection({ data }: { data: StaffDashboardData }) {
+  const upcoming = data.bookings
+    .filter((booking) => ["pending_deposit", "confirmed"].includes(booking.status))
+    .filter((booking) => new Date(booking.checkInAt) > new Date())
+    .sort((a, b) => new Date(a.checkInAt).getTime() - new Date(b.checkInAt).getTime())
+    .slice(0, 6);
+
+  return (
+    <>
+      <section className={styles.sectionStats} aria-label="สรุปวันนี้">
+        <article><span>เช็กอินวันนี้</span><strong>{data.summary.todayCheckIns}</strong><small>รายการ</small></article>
+        <article><span>รับกลับวันนี้</span><strong>{data.summary.todayCheckOuts}</strong><small>รายการ</small></article>
+        <article><span>กำลังเข้าพัก</span><strong>{data.summary.activeStays}</strong><small>การจอง</small></article>
+        <article><span>รอเข้าพัก</span><strong>{data.summary.upcomingBookings}</strong><small>การจอง</small></article>
+      </section>
+
+      <div className={styles.overviewGrid}>
+        <section className={styles.contentPanel}>
+          <header><div><span>TODAY & UPCOMING</span><h2>คิวเข้าพักถัดไป</h2></div></header>
+          {upcoming.length ? (
+            <div className={styles.compactList}>
+              {upcoming.map((booking) => (
+                <article key={booking.bookingId}>
+                  <div className={styles.dateChip}><strong>{new Date(booking.checkInAt).getDate()}</strong><span>{new Intl.DateTimeFormat("th-TH", { month: "short", timeZone: "Asia/Bangkok" }).format(new Date(booking.checkInAt))}</span></div>
+                  <div><strong>{booking.customerName}</strong><span>{booking.bookingCode} · {booking.petNames.join(", ") || `${booking.totalPets} ตัว`}</span></div>
+                  <div className={styles.listTail}><strong>{roomTypeLabel(booking.roomType)}</strong><span>{formatDateTime(booking.checkInAt)}</span></div>
+                </article>
+              ))}
+            </div>
+          ) : <EmptyBlock title="ยังไม่มีคิวเข้าพักถัดไป" detail="รายการที่ยืนยันแล้วจะปรากฏที่นี่" />}
+        </section>
+
+        <aside className={styles.quickPanel}>
+          <span>ROOM & CUSTOMER</span><h2>ภาพรวมระบบ</h2>
+          <dl>
+            <div><dt>ห้องเปิดใช้งาน</dt><dd>{data.summary.totalRooms}</dd></div>
+            <div><dt>ห้องกำลังใช้งาน</dt><dd>{data.summary.occupiedRooms}</dd></div>
+            <div className={data.summary.unallocatedBookings ? styles.attention : ""}><dt>การจองที่ยังไม่จัดห้อง</dt><dd>{data.summary.unallocatedBookings}</dd></div>
+            <div><dt>ลูกค้าทั้งหมด</dt><dd>{data.summary.totalCustomers}</dd></div>
+            <div><dt>น้องแมวทั้งหมด</dt><dd>{data.summary.totalPets}</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </>
+  );
+}
+
+export function RoomsSection({ rooms }: { rooms: DashboardRoom[] }) {
+  return (
+    <section className={styles.contentPanel}>
+      <header><div><span>ROOM BOARD</span><h2>สถานะห้องพัก</h2><p>ข้อมูลจากตาราง rooms และ booking_room_allocations</p></div></header>
+      {rooms.length ? (
+        <div className={styles.roomGrid}>
+          {rooms.map((room) => (
+            <article className={styles.roomCard} key={room.roomId}>
+              <header><div><span>{room.roomCode}</span><h3>{room.displayName}</h3></div><i className={`${styles.roomStatus} ${styles[`room_${room.occupancy}`]}`}>{room.occupancy === "occupied" ? "มีน้องเข้าพัก" : room.occupancy === "upcoming" ? "มีคิวถัดไป" : room.occupancy === "available" ? "ว่าง" : room.occupancy === "maintenance" ? "ปิดซ่อม" : "ปิดใช้งาน"}</i></header>
+              <div className={styles.roomMeta}><span>{roomTypeLabel(room.roomType)}</span><span>รองรับ {room.minimumPets}–{room.maximumPets} ตัว</span></div>
+              {room.bookingCode ? (
+                <dl><div><dt>การจอง</dt><dd>{room.bookingCode}</dd></div><div><dt>ผู้ปกครอง</dt><dd>{room.customerName}</dd></div><div><dt>จำนวน</dt><dd>{room.petCount} ตัว</dd></div><div><dt>{room.occupancy === "upcoming" ? "เริ่ม" : "ถึง"}</dt><dd>{formatDateTime(room.occupancy === "upcoming" ? room.occupiedFrom! : room.occupiedUntil!)}</dd></div></dl>
+              ) : <p className={styles.availableText}>พร้อมรับการจัดห้อง</p>}
+            </article>
+          ))}
+        </div>
+      ) : <EmptyBlock title="ยังไม่มีข้อมูลห้อง" detail="เพิ่มห้องใน Supabase ตาราง rooms แล้วรายการจะขึ้นอัตโนมัติ" />}
+    </section>
+  );
+}
+
+export function BookingsSection({ bookings }: { bookings: DashboardBooking[] }) {
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("active");
+  const filtered = useMemo(() => bookings.filter((booking) => {
+    const text = `${booking.bookingCode} ${booking.customerName} ${booking.phone} ${booking.petNames.join(" ")}`.toLowerCase();
+    const matchesQuery = text.includes(query.trim().toLowerCase());
+    const matchesStatus = status === "all"
+      || (status === "active" && !["cancelled", "expired", "checked_out"].includes(booking.status))
+      || booking.status === status;
+    return matchesQuery && matchesStatus;
+  }), [bookings, query, status]);
+
+  return (
+    <section className={styles.contentPanel}>
+      <header className={styles.panelHeaderWithFilters}>
+        <div><span>BOOKING LIST</span><h2>รายการจอง</h2><p>{filtered.length} จาก {bookings.length} รายการ</p></div>
+        <div className={styles.filters}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหารหัส ชื่อ เบอร์โทร หรือชื่อแมว" /><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="active">กำลังดำเนินการ</option><option value="all">ทั้งหมด</option><option value="pending_deposit">รอตรวจมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option><option value="checked_in">กำลังเข้าพัก</option><option value="checked_out">รับกลับแล้ว</option><option value="cancelled">ยกเลิก</option></select></div>
+      </header>
+      {filtered.length ? (
+        <div className={styles.bookingList}>
+          {filtered.map((booking) => (
+            <article key={booking.bookingId}>
+              <header><div><span>รหัสการจอง</span><strong>{booking.bookingCode}</strong></div><i className={`${styles.bookingStatus} ${styles[`booking_${booking.status}`]}`}>{statusLabel(booking.status)}</i></header>
+              <div className={styles.bookingBody}>
+                <dl><div><dt>ผู้ปกครอง</dt><dd>{booking.customerName}</dd></div><div><dt>เบอร์โทร</dt><dd>{booking.phone}</dd></div><div><dt>น้องแมว</dt><dd>{booking.petNames.join(", ") || `${booking.totalPets} ตัว`}</dd></div><div><dt>ห้อง</dt><dd>{booking.roomNames.join(", ") || roomTypeLabel(booking.roomType)}</dd></div></dl>
+                <dl><div><dt>เข้าพัก</dt><dd>{formatDateTime(booking.checkInAt)}</dd></div><div><dt>รับกลับ</dt><dd>{formatDateTime(booking.checkOutAt)}</dd></div><div><dt>ค่าบริการรวม</dt><dd>{formatBaht(booking.totalAmount)}</dd></div><div><dt>มัดจำ / คงเหลือ</dt><dd>{formatBaht(booking.depositAmount)} / {formatBaht(booking.balanceAmount)}</dd></div></dl>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : <EmptyBlock title="ไม่พบรายการจอง" detail="ลองเปลี่ยนคำค้นหรือสถานะ" />}
+    </section>
+  );
+}
+
+export function CustomersSection({ customers }: { customers: DashboardCustomer[] }) {
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => customers.filter((customer) =>
+    `${customer.fullName} ${customer.preferredName ?? ""} ${customer.phone} ${customer.lineDisplayName ?? ""} ${customer.pets.map((pet) => pet.petName).join(" ")}`
+      .toLowerCase().includes(query.trim().toLowerCase())
+  ), [customers, query]);
+
+  return (
+    <section className={styles.contentPanel}>
+      <header className={styles.panelHeaderWithFilters}><div><span>CUSTOMER & PET</span><h2>ลูกค้าและน้องแมว</h2><p>{filtered.length} จาก {customers.length} ครอบครัว</p></div><div className={styles.filters}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร LINE หรือชื่อแมว" /></div></header>
+      {filtered.length ? (
+        <div className={styles.customerGrid}>
+          {filtered.map((customer) => (
+            <article className={styles.customerCard} key={customer.customerId}>
+              <header><div className={styles.avatar}>{customer.fullName.trim().charAt(0) || "L"}</div><div><h3>{customer.fullName}</h3><span>{customer.preferredName ? `ชื่อเรียก ${customer.preferredName}` : customer.phone}</span></div><i className={customer.hasLineAccount ? styles.lineOn : styles.lineOff}>{customer.hasLineAccount ? "LINE ✓" : "ไม่มี LINE"}</i></header>
+              <dl><div><dt>เบอร์โทร</dt><dd>{customer.phone}</dd></div><div><dt>จำนวนการจอง</dt><dd>{customer.bookingCount} ครั้ง</dd></div><div><dt>น้องแมว</dt><dd>{customer.pets.length} ตัว</dd></div></dl>
+              <div className={styles.petTags}>{customer.pets.length ? customer.pets.map((pet) => <span key={pet.petId}><strong>{pet.petName}</strong>{[pet.breed, pet.sex, pet.ageText].filter(Boolean).join(" · ") || "ยังไม่ระบุรายละเอียด"}</span>) : <em>ยังไม่มีข้อมูลน้องแมว</em>}</div>
+            </article>
+          ))}
+        </div>
+      ) : <EmptyBlock title="ไม่พบข้อมูลลูกค้า" detail="ลองเปลี่ยนคำค้น" />}
+    </section>
+  );
+}
