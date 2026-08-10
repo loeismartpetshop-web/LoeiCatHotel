@@ -121,6 +121,13 @@ button { color: inherit; }
 .booking-card { width: min(100%, 760px); margin: 0 auto; padding: clamp(24px, 4vw, 45px); border: 1px solid rgba(68, 85, 77, 0.12); border-radius: 28px; background: var(--paper); box-shadow: var(--shadow); }
 .mobile-header { display: none; }
 
+@media (min-width: 1021px) {
+  .booking-panel {
+    display: grid;
+    align-content: center;
+  }
+}
+
 .stepper { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 43px; }
 .stepper::before { content: ""; position: absolute; top: 17px; left: 11%; right: 11%; height: 1px; background: var(--line); }
 .stepper-item { position: relative; z-index: 1; display: grid; justify-items: center; gap: 8px; color: #9ba39f; }
