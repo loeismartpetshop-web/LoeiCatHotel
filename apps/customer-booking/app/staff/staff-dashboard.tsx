@@ -3,12 +3,8 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import {
-  BookingsSection,
-  CustomersSection,
-  OverviewSection,
-  RoomsSection
-} from "./staff-sections";
+import { CustomersSection, OverviewSection } from "./staff-sections";
+import { BookingsManager, RoomsManager } from "./staff-crud-sections";
 import type { DashboardSection, StaffDashboardData } from "./staff-sections";
 import extraStyles from "./staff-dashboard-extras.module.css";
 import styles from "./staff.module.css";
@@ -196,6 +192,11 @@ export function StaffDashboard() {
     }
   };
 
+  const handleDashboardChanged = async (message: string) => {
+    await loadStaffData(accessToken);
+    setSuccess(message);
+  };
+
   const signOut = () => {
     window.sessionStorage.removeItem(SESSION_KEY);
     setAccessToken("");
@@ -299,8 +300,8 @@ export function StaffDashboard() {
         {loading && <div className={styles.emptyState}><span className={styles.spinner} /> กำลังโหลดข้อมูลจาก Supabase...</div>}
 
         {!loading && dashboardData && activeSection === "overview" && <OverviewSection data={dashboardData} />}
-        {!loading && dashboardData && activeSection === "rooms" && <RoomsSection rooms={dashboardData.rooms} />}
-        {!loading && dashboardData && activeSection === "bookings" && <BookingsSection bookings={dashboardData.bookings} />}
+        {!loading && dashboardData && activeSection === "rooms" && <RoomsManager rooms={dashboardData.rooms} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} />}
+        {!loading && dashboardData && activeSection === "bookings" && <BookingsManager bookings={dashboardData.bookings} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} />}
         {!loading && dashboardData && activeSection === "customers" && <CustomersSection customers={dashboardData.customers} />}
 
         {!loading && activeSection === "payments" && (

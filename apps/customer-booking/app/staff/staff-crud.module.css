@@ -1,0 +1,245 @@
+.primaryAction,
+.saveButton {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 11px;
+  color: #fffefd;
+  background: #493943;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cardActions,
+.bookingActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid #eee3e9;
+}
+
+.cardActions button,
+.bookingActions button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #dccbd5;
+  border-radius: 10px;
+  color: #493943;
+  background: #fffefd;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.bookingActions {
+  justify-content: flex-end;
+  margin: 0;
+  padding: 13px 16px;
+  background: #fffafd;
+}
+
+.dangerText {
+  border-color: #ecc4d5 !important;
+  color: #b54172 !important;
+  background: #fff5f9 !important;
+}
+
+.cardActions button:disabled,
+.bookingActions button:disabled,
+.modal button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.modalBackdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(35, 26, 32, 0.62);
+  backdrop-filter: blur(5px);
+}
+
+.modal {
+  overflow: hidden;
+  width: min(620px, 100%);
+  max-height: min(780px, calc(100dvh - 36px));
+  border: 1px solid #eadce4;
+  border-radius: 22px;
+  background: #fffefd;
+  box-shadow: 0 28px 80px rgba(35, 26, 32, 0.3);
+}
+
+.modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 19px 21px;
+  border-bottom: 1px solid #eee3e9;
+  background: #f9edf4;
+}
+
+.modal > header span {
+  color: #d069a2;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.modal > header h3 {
+  margin: 3px 0 0;
+  color: #2d242a;
+  font-size: 21px;
+}
+
+.modal > header button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #dccbd5;
+  border-radius: 50%;
+  color: #493943;
+  background: #fffefd;
+  font-size: 23px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 21px;
+}
+
+.formGrid label {
+  display: grid;
+  gap: 7px;
+}
+
+.formGrid label > span {
+  color: #68555f;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.formGrid input,
+.formGrid select {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid #dccbd5;
+  border-radius: 11px;
+  color: #2d242a;
+  background: #fffefd;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.formGrid input:focus,
+.formGrid select:focus {
+  border-color: #f0a8d0;
+  box-shadow: 0 0 0 3px rgba(240, 168, 208, 0.2);
+}
+
+.fullField {
+  grid-column: 1 / -1;
+}
+
+.notice {
+  margin: 0 21px 18px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  color: #735465;
+  background: #f9edf4;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.modal > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 16px 21px;
+  border-top: 1px solid #eee3e9;
+  background: #fffafd;
+}
+
+.modal > footer button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #dccbd5;
+  border-radius: 11px;
+  color: #493943;
+  background: #fffefd;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.modal > footer .saveButton {
+  border-color: #493943;
+  color: #fffefd;
+  background: #493943;
+}
+
+@media (max-width: 680px) {
+  .primaryAction {
+    width: 100%;
+  }
+
+  .bookingActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bookingActions button,
+  .cardActions button {
+    min-height: 44px;
+  }
+
+  .modalBackdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+    padding: 17px;
+  }
+
+  .fullField {
+    grid-column: auto;
+  }
+
+  .notice {
+    margin: 0 17px 15px;
+  }
+
+  .modal > footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 14px 17px calc(14px + env(safe-area-inset-bottom));
+  }
+}
+
+.primaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
