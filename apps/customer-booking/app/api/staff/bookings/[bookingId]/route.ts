@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 interface BookingRow {
   booking_id: string;
   booking_code: string;
+  customer_id: string;
   status: string;
   check_in_at: string;
   check_out_at: string;
@@ -33,7 +34,7 @@ const EDITABLE_STATUSES = [
 
 async function getBooking(bookingId: string): Promise<BookingRow> {
   const rows = await staffAdminRequest<BookingRow[]>(
-    `bookings?select=booking_id,booking_code,status,check_in_at,check_out_at,total_amount,deposit_amount,balance_amount,updated_at&booking_id=eq.${encodeURIComponent(bookingId)}&limit=1`
+    `bookings?select=booking_id,booking_code,customer_id,status,check_in_at,check_out_at,total_amount,deposit_amount,balance_amount,updated_at&booking_id=eq.${encodeURIComponent(bookingId)}&limit=1`
   );
   if (!rows[0]) throw new Response("booking not found", { status: 404 });
   return rows[0];
@@ -127,6 +128,38 @@ export async function DELETE(request: Request, context: { params: Promise<{ book
     const { bookingId } = await context.params;
     if (!isUuid(bookingId)) return NextResponse.json({ error: "invalid booking id" }, { status: 400 });
     const before = await getBooking(bookingId);
+    const body = await request.json().catch(() => ({})) as { permanent?: boolean; confirmation?: string };
+    if (body.permanent) {
+      if (staff.role !== "owner") {
+        return NextResponse.json({ error: "เฉพาะ Owner เท่านั้นที่ลบข้อมูลถาวรได้" }, { status: 403 });
+      }
+      if (body.confirmation?.trim().toUpperCase() !== before.booking_code.toUpperCase()) {
+        return NextResponse.json({ error: "รหัสยืนยันไม่ตรงกับรหัสการจอง" }, { status: 400 });
+      }
+
+      await staffAdminRequest(`refund_requests?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`line_message_log?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`daily_care_tasks?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`print_history?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`emergency_consent?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`booking_status_history?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`booking_pets?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`booking_room_allocations?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`payments?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`audit_log?entity_type=eq.booking&entity_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await staffAdminRequest(`bookings?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: "DELETE" });
+      await writeAudit({
+        entityType: "booking",
+        entityId: bookingId,
+        action: "purge_test_data",
+        actorUserId: staff.userId,
+        beforeData: before,
+        afterData: null,
+        reason: "Owner ลบรายการจองทดสอบถาวรผ่าน Staff Dashboard"
+      });
+      return NextResponse.json({ ok: true, permanent: true, bookingCode: before.booking_code });
+    }
+
     if (before.status === "checked_out") {
       return NextResponse.json({ error: "รายการที่รับกลับแล้วต้องเก็บเป็นประวัติและไม่สามารถยกเลิกได้" }, { status: 409 });
     }

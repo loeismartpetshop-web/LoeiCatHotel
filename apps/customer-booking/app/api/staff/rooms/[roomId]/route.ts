@@ -117,6 +117,32 @@ export async function DELETE(request: Request, context: { params: Promise<{ room
     const { roomId } = await context.params;
     if (!isUuid(roomId)) return NextResponse.json({ error: "invalid room id" }, { status: 400 });
     const before = await getRoom(roomId);
+    const body = await request.json().catch(() => ({})) as { permanent?: boolean; confirmation?: string };
+    if (body.permanent) {
+      if (staff.role !== "owner") {
+        return NextResponse.json({ error: "เฉพาะ Owner เท่านั้นที่ลบข้อมูลถาวรได้" }, { status: 403 });
+      }
+      if (body.confirmation?.trim().toUpperCase() !== before.room_code.toUpperCase()) {
+        return NextResponse.json({ error: "รหัสยืนยันไม่ตรงกับรหัสห้อง" }, { status: 400 });
+      }
+
+      await staffAdminRequest(`daily_care_tasks?room_id=eq.${encodeURIComponent(roomId)}`, { method: "DELETE" });
+      await staffAdminRequest(`print_history?room_id=eq.${encodeURIComponent(roomId)}`, { method: "DELETE" });
+      await staffAdminRequest(`booking_room_allocations?room_id=eq.${encodeURIComponent(roomId)}`, { method: "DELETE" });
+      await staffAdminRequest(`audit_log?entity_type=eq.room&entity_id=eq.${encodeURIComponent(roomId)}`, { method: "DELETE" });
+      await staffAdminRequest(`rooms?room_id=eq.${encodeURIComponent(roomId)}`, { method: "DELETE" });
+      await writeAudit({
+        entityType: "room",
+        entityId: roomId,
+        action: "purge_test_data",
+        actorUserId: staff.userId,
+        beforeData: before,
+        afterData: null,
+        reason: "Owner ลบห้องทดสอบถาวรผ่าน Staff Dashboard"
+      });
+      return NextResponse.json({ ok: true, permanent: true, roomCode: before.room_code });
+    }
+
     if (await hasFutureAllocation(roomId)) {
       return NextResponse.json({ error: "ห้องนี้ยังมีรายการจัดห้องอยู่ จึงยังปิดใช้งานไม่ได้" }, { status: 409 });
     }

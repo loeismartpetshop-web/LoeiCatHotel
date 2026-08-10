@@ -243,3 +243,9 @@
   text-decoration: none;
   white-space: nowrap;
 }
+
+.purgeButton {
+  border-color: #9f315f !important;
+  color: #fff !important;
+  background: #9f315f !important;
+}

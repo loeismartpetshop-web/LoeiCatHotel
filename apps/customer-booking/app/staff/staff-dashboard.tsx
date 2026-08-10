@@ -300,8 +300,8 @@ export function StaffDashboard() {
         {loading && <div className={styles.emptyState}><span className={styles.spinner} /> กำลังโหลดข้อมูลจาก Supabase...</div>}
 
         {!loading && dashboardData && activeSection === "overview" && <OverviewSection data={dashboardData} />}
-        {!loading && dashboardData && activeSection === "rooms" && <RoomsManager rooms={dashboardData.rooms} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} />}
-        {!loading && dashboardData && activeSection === "bookings" && <BookingsManager bookings={dashboardData.bookings} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} />}
+        {!loading && dashboardData && activeSection === "rooms" && <RoomsManager rooms={dashboardData.rooms} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} canPurge={staff?.role === "owner"} />}
+        {!loading && dashboardData && activeSection === "bookings" && <BookingsManager bookings={dashboardData.bookings} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} canPurge={staff?.role === "owner"} />}
         {!loading && dashboardData && activeSection === "customers" && <CustomersSection customers={dashboardData.customers} />}
 
         {!loading && activeSection === "payments" && (
