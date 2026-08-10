@@ -47,6 +47,7 @@ export interface DashboardCustomer {
   fullName: string;
   preferredName: string | null;
   phone: string;
+  miHomeAppId: string | null;
   lineDisplayName: string | null;
   hasLineAccount: boolean;
   pets: Array<{
@@ -238,7 +239,7 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const filtered = useMemo(() => customers.filter((customer) =>
-    `${customer.fullName} ${customer.preferredName ?? ""} ${customer.phone} ${customer.lineDisplayName ?? ""} ${customer.pets.map((pet) => pet.petName).join(" ")}`
+    `${customer.fullName} ${customer.preferredName ?? ""} ${customer.phone} ${customer.miHomeAppId ?? ""} ${customer.lineDisplayName ?? ""} ${customer.pets.map((pet) => pet.petName).join(" ")}`
       .toLowerCase().includes(query.trim().toLowerCase())
   ), [customers, query]);
 
@@ -293,7 +294,7 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
       <header className={styles.panelHeaderWithFilters}>
         <div><span>CUSTOMER & PET</span><h2>ลูกค้าและน้องแมว</h2><p>{filtered.length} จาก {customers.length} ครอบครัว</p></div>
         <div className={styles.filters}>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร LINE หรือชื่อแมว" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร Mi Home ID, LINE หรือชื่อแมว" />
           {canPurge && <StaffBulkPurge scope="customers" title="ลบลูกค้าและน้องแมวทั้งหมด" description="ลูกค้าและน้องแมวทั้งหมด รวมถึงรายการจอง การชำระเงิน และข้อมูลที่เชื่อมโยงทั้งหมดจะถูกลบถาวร ห้องพักจะยังอยู่ ข้อมูลกู้คืนไม่ได้" accessToken={accessToken} onChanged={onChanged} onError={onError} />}
         </div>
       </header>
@@ -305,6 +306,7 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
               <div className={styles.customerBody}>
                 <dl className={styles.customerDetails}>
                   <div><dt>เบอร์โทร</dt><dd>{customer.phone}</dd></div>
+                  <div><dt>Mi Home ID</dt><dd>{customer.miHomeAppId || "ยังไม่ระบุ"}</dd></div>
                   <div><dt>ชื่อ LINE</dt><dd>{customer.lineDisplayName || (customer.hasLineAccount ? "เชื่อมต่อแล้ว" : "ยังไม่เชื่อมต่อ")}</dd></div>
                   <div><dt>จำนวนการจอง</dt><dd>{customer.bookingCount} ครั้ง</dd></div>
                   <div><dt>การจองล่าสุด</dt><dd>{customer.latestBookingAt ? formatDateTime(customer.latestBookingAt) : "ยังไม่มี"}</dd></div>

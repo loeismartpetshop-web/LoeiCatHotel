@@ -33,6 +33,7 @@ interface CustomerRow {
   full_name: string;
   preferred_name: string | null;
   phone: string;
+  mihome_app_id: string | null;
   line_user_id: string | null;
   line_display_name: string | null;
   created_at: string;
@@ -83,6 +84,24 @@ async function adminRequest<T>(path: string): Promise<T> {
   return (text ? JSON.parse(text) : null) as T;
 }
 
+function isMissingMiHomeColumn(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("mihome_app_id") && /PGRST204|schema cache|does not exist/i.test(message);
+}
+
+async function loadCustomers(): Promise<CustomerRow[]> {
+  try {
+    return await adminRequest<CustomerRow[]>(
+      "customers?select=customer_id,full_name,preferred_name,phone,mihome_app_id,line_user_id,line_display_name,created_at&deleted_at=is.null&order=created_at.desc&limit=300"
+    );
+  } catch (error) {
+    if (!isMissingMiHomeColumn(error)) throw error;
+    const customers = await adminRequest<Array<Omit<CustomerRow, "mihome_app_id">>>(
+      "customers?select=customer_id,full_name,preferred_name,phone,line_user_id,line_display_name,created_at&deleted_at=is.null&order=created_at.desc&limit=300"
+    );
+    return customers.map((customer) => ({ ...customer, mihome_app_id: null }));
+  }
+}
 async function requireStaff(request: Request): Promise<StaffRow> {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token) throw new Response("unauthorized", { status: 401 });
@@ -120,6 +139,11 @@ function roomTypeFromNotes(notes: string | null): string | null {
   const match = notes?.match(/ห้องที่เลือก:\s*(villa|condo)/i);
   return match?.[1]?.toLowerCase() ?? null;
 }
+function miHomeIdFromNotes(notes: string | null): string | null {
+  const match = notes?.match(/Mi Home ID:\s*([^;]+)/i);
+  return match?.[1]?.trim() && match[1].trim() !== "ไม่ระบุ" ? match[1].trim() : null;
+}
+
 
 export async function GET(request: Request) {
   try {
@@ -131,9 +155,7 @@ export async function GET(request: Request) {
       adminRequest<BookingRow[]>(
         "bookings?select=booking_id,booking_code,customer_id,status,source,check_in_at,check_out_at,total_pets,total_amount,deposit_amount,balance_amount,customer_notes,created_at&order=created_at.desc&limit=300"
       ),
-      adminRequest<CustomerRow[]>(
-        "customers?select=customer_id,full_name,preferred_name,phone,line_user_id,line_display_name,created_at&deleted_at=is.null&order=created_at.desc&limit=300"
-      ),
+      loadCustomers(),
       adminRequest<PetRow[]>(
         "pets?select=pet_id,customer_id,pet_name,sex,breed,age_text&deleted_at=is.null&order=created_at.desc&limit=1000"
       ),
@@ -232,6 +254,7 @@ export async function GET(request: Request) {
         fullName: customer.full_name,
         preferredName: customer.preferred_name,
         phone: customer.phone,
+        miHomeAppId: customer.mihome_app_id || miHomeIdFromNotes(customerBookings[0]?.customer_notes ?? null),
         lineDisplayName: customer.line_display_name,
         hasLineAccount: Boolean(customer.line_user_id),
         pets: customerPets.map((pet) => ({

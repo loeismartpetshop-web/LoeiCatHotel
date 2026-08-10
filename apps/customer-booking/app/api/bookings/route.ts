@@ -20,6 +20,7 @@ interface BookingRequest {
   ratePlan: RatePlanCode;
   guardianName: string;
   phone: string;
+  miHomeAppId?: string;
   petNames: string[];
   clinicName?: string;
   clinicPhone?: string;
@@ -64,6 +65,27 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}): Promise
   if (!response.ok) throw new Error(`Supabase ${response.status}: ${text.slice(0, 500)}`);
   return (text ? JSON.parse(text) : null) as T;
 }
+function isMissingMiHomeColumn(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("mihome_app_id") && /PGRST204|schema cache|does not exist/i.test(message);
+}
+
+async function customerRequest<T>(path: string, init: RequestInit): Promise<T> {
+  try {
+    return await supabaseRequest<T>(path, init);
+  } catch (error) {
+    if (!isMissingMiHomeColumn(error) || typeof init.body !== "string") throw error;
+    const payload = JSON.parse(init.body) as Record<string, unknown>;
+    delete payload.mihome_app_id;
+    console.warn("Supabase mihome_app_id migration is pending; preserving the ID in booking notes");
+    return supabaseRequest<T>(path, {
+      ...init,
+      body: JSON.stringify(payload)
+    });
+  }
+}
+
+
 
 function requireText(value: unknown, label: string, maximumLength = 160): string {
   if (typeof value !== "string" || !value.trim()) throw new PublicError(`กรุณากรอก${label}`);
@@ -258,8 +280,9 @@ function validateRequest(input: BookingRequest) {
   if (!/^[a-zA-Z0-9-]{16,128}$/.test(idempotencyKey)) throw new PublicError("รหัสคำขอไม่ถูกต้อง");
 
   const guardianName = requireText(input.guardianName, "ชื่อผู้ปกครอง");
-  const phone = requireText(input.phone, "เบอร์โทรศัพท์", 20).replaceAll(/[-\s]/g, "");
-  if (!/^0\d{8,9}$/.test(phone)) throw new PublicError("เบอร์โทรศัพท์ไม่ถูกต้อง");
+  const phone = requireText(input.phone, "เบอร์โทรศัพท์", 10);
+  if (!/^0\d{9}$/.test(phone)) throw new PublicError("เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 ตัวและขึ้นต้นด้วย 0");
+  const miHomeAppId = typeof input.miHomeAppId === "string" ? input.miHomeAppId.trim().slice(0, 120) : "";
   if (!Number.isInteger(input.petCount) || input.petCount < 1 || input.petCount > 4) {
     throw new PublicError("จำนวนแมวต้องอยู่ระหว่าง 1–4 ตัว");
   }
@@ -309,6 +332,7 @@ function validateRequest(input: BookingRequest) {
     lineIdToken: typeof input.lineIdToken === "string" ? input.lineIdToken.slice(0, 4096) : undefined,
     guardianName,
     phone,
+    miHomeAppId,
     petNames,
     roomType: input.roomType,
     checkInAt,
@@ -355,11 +379,12 @@ export async function POST(request: Request) {
       );
       customer = returningCustomers[0];
       if (customer) {
-        await supabaseRequest(`customers?customer_id=eq.${encodeURIComponent(customer.customer_id)}`, {
+        await customerRequest(`customers?customer_id=eq.${encodeURIComponent(customer.customer_id)}`, {
           method: "PATCH",
           body: JSON.stringify({
             full_name: input.guardianName,
             phone: input.phone,
+            mihome_app_id: input.miHomeAppId || null,
             line_display_name: lineIdentity.displayName,
             updated_at: new Date().toISOString()
           })
@@ -368,12 +393,13 @@ export async function POST(request: Request) {
     }
 
     if (!customer) {
-      const customers = await supabaseRequest<CustomerRow[]>("customers", {
+      const customers = await customerRequest<CustomerRow[]>("customers", {
         method: "POST",
         headers: { Prefer: "return=representation" },
         body: JSON.stringify({
           full_name: input.guardianName,
           phone: input.phone,
+          mihome_app_id: input.miHomeAppId || null,
           line_user_id: lineIdentity?.userId ?? null,
           line_display_name: lineIdentity?.displayName ?? null,
           acquisition_source: lineIdentity ? "line_oa" : "web",
@@ -418,7 +444,7 @@ export async function POST(request: Request) {
         deposit_amount: input.depositAmount,
         balance_amount: input.totalAmount - input.depositAmount,
         deposit_due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        customer_notes: `ห้องที่เลือก: ${input.roomType}; การดูแล: ${input.careFlags.join(", ") || "ไม่มี"}; การชำระ: มัดจำ 50% รอตรวจสอบสลิป`,
+        customer_notes: `ห้องที่เลือก: ${input.roomType}; การดูแล: ${input.careFlags.join(", ") || "ไม่มี"}; Mi Home ID: ${input.miHomeAppId || "ไม่ระบุ"}; การชำระ: มัดจำ 50% รอตรวจสอบสลิป`,
         idempotency_key: input.idempotencyKey
       })
     });

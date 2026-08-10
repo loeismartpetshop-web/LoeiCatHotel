@@ -28,11 +28,26 @@
 
 * { box-sizing: border-box; }
 
-html { background: var(--cream-100); scroll-behavior: smooth; touch-action: pan-x pan-y; }
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  background: var(--cream-100);
+  scroll-behavior: smooth;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
   color: var(--ink);
   font-family: "IBM Plex Sans Thai", Tahoma, sans-serif;
   line-height: 1.55;
@@ -44,6 +59,9 @@ button, label, input { -webkit-tap-highlight-color: transparent; }
 button { color: inherit; }
 
 .site-shell {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   min-height: 100svh;
   display: grid;
   grid-template-columns: minmax(360px, 0.88fr) minmax(620px, 1.12fr);
@@ -117,8 +135,8 @@ button { color: inherit; }
 .contact-note { position: relative; z-index: 1; margin-top: 18px; color: rgba(255, 255, 255, 0.58); font-size: 11px; }
 .contact-note b { color: rgba(255, 255, 255, 0.9); }
 
-.booking-panel { min-height: 100svh; padding: clamp(25px, 4vw, 62px); background: linear-gradient(180deg, #f8f4ec 0%, #f5efe5 100%); }
-.booking-card { width: min(100%, 760px); margin: 0 auto; padding: clamp(24px, 4vw, 45px); border: 1px solid rgba(68, 85, 77, 0.12); border-radius: 28px; background: var(--paper); box-shadow: var(--shadow); }
+.booking-panel { min-width: 0; min-height: 100svh; padding: clamp(25px, 4vw, 62px); background: linear-gradient(180deg, #f8f4ec 0%, #f5efe5 100%); }
+.booking-card { width: min(100%, 760px); min-width: 0; margin: 0 auto; padding: clamp(24px, 4vw, 45px); border: 1px solid rgba(68, 85, 77, 0.12); border-radius: 28px; background: var(--paper); box-shadow: var(--shadow); }
 .mobile-header { display: none; }
 
 @media (min-width: 1021px) {
@@ -158,6 +176,8 @@ button { color: inherit; }
 .field-label input:hover { border-color: #b6beb9; }
 .field-label input:focus { border-color: var(--forest-700); box-shadow: 0 0 0 3px rgba(63, 101, 88, 0.11); }
 
+.full-width-field { grid-column: 1 / -1; }
+.field-hint { color: var(--muted); font-size: 9px; font-weight: 500; line-height: 1.45; }
 .field-title { display: block; font-size: 12px; font-weight: 700; }
 .field-title-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 10px; }
 .field-title-row small { color: var(--muted); font-size: 9px; }
@@ -227,7 +247,7 @@ button { color: inherit; }
 .summary-card dl { margin: 0; padding: 5px 17px; }
 .summary-card dl div { display: grid; grid-template-columns: 95px 1fr; gap: 14px; padding: 9px 0; border-bottom: 1px solid #ecebe6; }
 .summary-card dt { color: var(--muted); font-size: 9px; }
-.summary-card dd { margin: 0; text-align: right; font-size: 10px; font-weight: 600; }
+.summary-card dd { min-width: 0; margin: 0; overflow-wrap: anywhere; text-align: right; font-size: 10px; font-weight: 600; }
 .money-row { display: flex; justify-content: space-between; gap: 20px; padding: 12px 17px; font-size: 11px; background: #f8f7f3; }
 .money-row strong { font-size: 14px; }
 .deposit-row { color: #9b5731; background: var(--terracotta-100); }
@@ -284,7 +304,8 @@ button { color: inherit; }
 }
 
 @media (max-width: 640px) {
-  input { font-size: 16px; }
+  body { font-size: 16px; }
+  input { min-width: 0; font-size: 16px; }
   .booking-panel { padding: 0; background: var(--paper); }
   .mobile-header { padding: 15px 18px 11px; margin: 0; border-bottom: 1px solid #ebe8e0; background: var(--paper); }
   .mobile-header .brand-mark { width: 38px; height: 38px; font-size: 19px; }
@@ -324,7 +345,7 @@ button { color: inherit; }
   .selection-card { min-height: 145px; }
   .stepper-item small { display: none; }
   .stepper { margin-bottom: 25px; }
-  .actions .button { padding-inline: 12px; font-size: 10px; }
+  .actions .button { padding-inline: 10px; font-size: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -479,37 +500,38 @@ button { color: inherit; }
   .mobile-header .brand-lockup span, .line-badge { font-size: 12px; }
   .stepper-item small { font-size: 11px; }
   .step-heading p, .success-view > p { font-size: 15px; line-height: 1.5; }
-  .booking-card small { font-size: 12px; line-height: 1.45; }
+  .booking-card small { font-size: 13px; line-height: 1.5; }
   .segmented-control span, .field-title { font-size: 15px; }
   .segmented-control small, .field-title-row small, .counter-block > div:first-child small { font-size: 13px; }
-  .field-label { font-size: 14px; }
+  .field-label { min-width: 0; font-size: 15px; }
+  .field-hint { font-size: 13px; }
   .counter output span { font-size: 13px; }
   .availability-note b, .document-note b { font-size: 14px; }
-  .availability-note small, .document-note small { font-size: 12px; }
+  .availability-note small, .document-note small { font-size: 13px; }
   .selection-card strong { font-size: 16px; }
-  .selection-card small, .selection-card em, .recommend-chip { font-size: 12px; line-height: 1.4; }
+  .selection-card small, .selection-card em, .recommend-chip { font-size: 13px; line-height: 1.45; }
   .warning-note b, .rate-copy strong, .hourly-rate span { font-size: 14px; }
-  .warning-note span, .rate-copy small, .rate-price small, .hourly-rate strong small { font-size: 12px; }
+  .warning-note span, .rate-copy small, .rate-price small, .hourly-rate strong small { font-size: 13px; }
   .check-grid label, .consent-row, .terms-row { font-size: 14px; line-height: 1.5; }
   .summary-top span { font-size: 15px; }
   .summary-top small { font-size: 12px; }
-  .summary-card dt { font-size: 13px; }
-  .summary-card dd { font-size: 14px; line-height: 1.4; }
+  .summary-card dt { font-size: 14px; }
+  .summary-card dd { font-size: 15px; line-height: 1.45; }
   .summary-card dl div { grid-template-columns: 92px 1fr; }
   .money-row { font-size: 14px; }
   .money-row strong { font-size: 17px; }
   .deposit-row strong { font-size: 21px; }
-  .calculation-note { font-size: 12px; line-height: 1.5; }
+  .calculation-note { font-size: 13px; line-height: 1.5; }
   .payment-title b { font-size: 15px; }
-  .payment-title small, .promptpay-row span, .payment-card > p, .verification-note { font-size: 12px; line-height: 1.45; }
+  .payment-title small, .promptpay-row span, .payment-card > p, .verification-note { font-size: 13px; line-height: 1.5; }
   .payment-amount-row span { font-size: 14px; }
   .payment-amount-row strong { font-size: 22px; }
   .promptpay-row strong { font-size: 15px; }
   .promptpay-row button, .review-edit-actions button { font-size: 12px; }
   .review-save-note b, .next-steps b, .line-confirmation-card b { font-size: 14px; }
-  .review-save-note small, .next-steps ol, .line-confirmation-card small { font-size: 12px; line-height: 1.5; }
+  .review-save-note small, .next-steps ol, .line-confirmation-card small { font-size: 13px; line-height: 1.5; }
   .error-message { font-size: 13px; }
-  .button, .actions .button { font-size: 15px; }
+  .button, .actions .button { font-size: 16px; }
   .receipt-card { padding: 15px 13px; border-radius: 16px; }
   .receipt-brand strong { font-size: 19px; }
   .receipt-brand small, .receipt-subtitle { font-size: 12px; }

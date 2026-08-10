@@ -37,6 +37,7 @@ interface BookingForm {
   ratePlan: RatePlanCode;
   guardianName: string;
   phone: string;
+  miHomeAppId: string;
   petNames: string[];
   clinicName: string;
   clinicPhone: string;
@@ -57,6 +58,7 @@ const initialForm: BookingForm = {
   ratePlan: "HOTEL_SUPPLIED",
   guardianName: "",
   phone: "",
+  miHomeAppId: "",
   petNames: ["", ""],
   clinicName: "",
   clinicPhone: "",
@@ -82,6 +84,10 @@ const careOptions = [
 function formatBaht(value: number): string {
   return `${value.toLocaleString("th-TH")} บาท`;
 }
+function sanitizePhoneInput(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
 
 function countNights(start: string, end: string): number {
   if (!start || !end) return 1;
@@ -234,8 +240,8 @@ export function BookingApp() {
         setError("กรุณากรอกชื่อผู้ปกครอง");
         return false;
       }
-      if (!/^0\d{8,9}$/.test(form.phone.replaceAll(/[-\s]/g, ""))) {
-        setError("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง");
+      if (!/^0\d{9}$/.test(form.phone)) {
+        setError("กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 ตัว โดยขึ้นต้นด้วย 0");
         return false;
       }
       if (form.petNames.some((name) => !name.trim())) {
@@ -467,7 +473,8 @@ export function BookingApp() {
                 <section className="form-section" aria-label="ข้อมูลผู้ปกครองและแมว">
                   <div className="field-grid two-columns">
                     <label className="field-label"><span>ชื่อผู้ปกครอง *</span><input value={form.guardianName} placeholder="เช่น คุณกานต์" onChange={(event) => updateForm("guardianName", event.target.value)} /></label>
-                    <label className="field-label"><span>เบอร์โทรศัพท์ *</span><input type="tel" inputMode="tel" value={form.phone} placeholder="08X-XXX-XXXX" onChange={(event) => updateForm("phone", event.target.value)} /></label>
+                    <label className="field-label"><span>เบอร์โทรศัพท์ 10 ตัว *</span><input type="tel" inputMode="numeric" autoComplete="tel" maxLength={10} pattern="0[0-9]{9}" value={form.phone} placeholder="08XXXXXXXX" onChange={(event) => updateForm("phone", sanitizePhoneInput(event.target.value))} /><small className="field-hint">{form.phone.length}/10 ตัว</small></label>
+                    <label className="field-label full-width-field"><span>Mi Home App ID สำหรับดูกล้อง</span><input value={form.miHomeAppId} maxLength={120} autoCapitalize="none" autoCorrect="off" placeholder="อีเมล เบอร์โทร หรือ ID ที่ใช้ในแอป Mi Home" onChange={(event) => updateForm("miHomeAppId", event.target.value)} /><small className="field-hint">กรอกหากต้องการให้พนักงานแชร์สิทธิ์ดูกล้องห้องพักให้บัญชีนี้</small></label>
                   </div>
 
                   <div className="pet-name-card">
@@ -513,6 +520,7 @@ export function BookingApp() {
                       <div><dt>ผู้ปกครอง</dt><dd>{form.guardianName}</dd></div>
                       <div><dt>เบอร์โทร</dt><dd>{form.phone}</dd></div>
                       <div><dt>ช่วงเวลา</dt><dd>{formatDateRange(form)}</dd></div>
+                      <div><dt>Mi Home ID</dt><dd>{form.miHomeAppId.trim() || "ยังไม่ระบุ"}</dd></div>
                       <div><dt>ห้องพัก</dt><dd>{form.roomType === "condo" ? "คอนโด" : "วิลล่า"}</dd></div>
                       <div><dt>น้องแมว</dt><dd>{form.petNames.join(" · ")}</dd></div>
                       <div><dt>แพ็กเกจ</dt><dd>{form.mode === "hourly" ? "ฝากไม่เกิน 6 ชั่วโมง" : selectedRate.title}</dd></div>
@@ -560,6 +568,7 @@ export function BookingApp() {
                   <div><dt>ผู้ปกครอง</dt><dd>{form.guardianName}</dd></div>
                   <div><dt>เบอร์โทร</dt><dd>{form.phone}</dd></div>
                   <div><dt>น้องแมว</dt><dd>{form.petNames.join(", ")}</dd></div>
+                  {form.miHomeAppId.trim() && <div><dt>Mi Home ID</dt><dd>{form.miHomeAppId.trim()}</dd></div>}
                   <div><dt>จำนวน / ห้อง</dt><dd>{form.petCount} ตัว · {form.roomType === "condo" ? "ห้องคอนโด" : "ห้องวิลล่า"}</dd></div>
                   <div><dt>แพ็กเกจ</dt><dd>{form.mode === "hourly" ? "ฝากไม่เกิน 6 ชั่วโมง" : selectedRate.title}</dd></div>
                 </dl>
