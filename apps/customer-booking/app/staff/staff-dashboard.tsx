@@ -303,7 +303,7 @@ export function StaffDashboard() {
         {!loading && dashboardData && activeSection === "overview" && <OverviewSection data={dashboardData} />}
         {!loading && dashboardData && activeSection === "rooms" && <RoomsManager rooms={dashboardData.rooms} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} canPurge={staff?.role === "owner"} />}
         {!loading && dashboardData && activeSection === "bookings" && <BookingsManager bookings={dashboardData.bookings} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} canPurge={staff?.role === "owner"} />}
-        {!loading && dashboardData && activeSection === "customers" && <CustomersSection customers={dashboardData.customers} />}
+        {!loading && dashboardData && activeSection === "customers" && <CustomersSection customers={dashboardData.customers} accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} canPurge={staff?.role === "owner"} />}
 
         {!loading && activeSection === "payments" && (
           <>

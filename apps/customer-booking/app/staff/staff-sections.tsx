@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { StaffActionDialog } from "./staff-action-dialog";
 import styles from "./staff-sections.module.css";
 
 export type DashboardSection = "overview" | "rooms" | "bookings" | "payments" | "customers";
@@ -221,27 +222,118 @@ export function BookingsSection({ bookings }: { bookings: DashboardBooking[] }) 
   );
 }
 
-export function CustomersSection({ customers }: { customers: DashboardCustomer[] }) {
+interface CustomersSectionProps {
+  customers: DashboardCustomer[];
+  accessToken: string;
+  canPurge: boolean;
+  onChanged: (message: string) => Promise<void>;
+  onError: (message: string) => void;
+}
+
+export function CustomersSection({ customers, accessToken, canPurge, onChanged, onError }: CustomersSectionProps) {
   const [query, setQuery] = useState("");
+  const [customerToDelete, setCustomerToDelete] = useState<DashboardCustomer | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const filtered = useMemo(() => customers.filter((customer) =>
     `${customer.fullName} ${customer.preferredName ?? ""} ${customer.phone} ${customer.lineDisplayName ?? ""} ${customer.pets.map((pet) => pet.petName).join(" ")}`
       .toLowerCase().includes(query.trim().toLowerCase())
   ), [customers, query]);
 
+  const openDelete = (customer: DashboardCustomer) => {
+    setCustomerToDelete(customer);
+    setConfirmation("");
+    setDeleteError("");
+    onError("");
+  };
+
+  const closeDelete = () => {
+    if (deleting) return;
+    setCustomerToDelete(null);
+    setConfirmation("");
+    setDeleteError("");
+  };
+
+  const deleteCustomerFamily = async () => {
+    if (!customerToDelete || deleting) return;
+    if (confirmation.trim() !== customerToDelete.phone.trim()) {
+      setDeleteError("เบอร์โทรไม่ตรง จึงยังไม่ได้ลบข้อมูล");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    onError("");
+    try {
+      const response = await fetch(`/api/staff/customers/${customerToDelete.customerId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ permanent: true, confirmation })
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(payload.error ?? "ลบข้อมูลครอบครัวทดสอบไม่สำเร็จ");
+      }
+      const name = customerToDelete.fullName;
+      setCustomerToDelete(null);
+      setConfirmation("");
+      await onChanged(`ลบข้อมูลทดสอบของ ${name} พร้อมน้องแมวและรายการจองที่เกี่ยวข้องแล้ว`);
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "ลบข้อมูลครอบครัวทดสอบไม่สำเร็จ";
+      setDeleteError(message);
+      onError(message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <section className={styles.contentPanel}>
       <header className={styles.panelHeaderWithFilters}><div><span>CUSTOMER & PET</span><h2>ลูกค้าและน้องแมว</h2><p>{filtered.length} จาก {customers.length} ครอบครัว</p></div><div className={styles.filters}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร LINE หรือชื่อแมว" /></div></header>
       {filtered.length ? (
-        <div className={styles.customerGrid}>
+        <div className={styles.customerList}>
           {filtered.map((customer) => (
             <article className={styles.customerCard} key={customer.customerId}>
               <header><div className={styles.avatar}>{customer.fullName.trim().charAt(0) || "L"}</div><div><h3>{customer.fullName}</h3><span>{customer.preferredName ? `ชื่อเรียก ${customer.preferredName}` : customer.phone}</span></div><i className={customer.hasLineAccount ? styles.lineOn : styles.lineOff}>{customer.hasLineAccount ? "LINE ✓" : "ไม่มี LINE"}</i></header>
-              <dl><div><dt>เบอร์โทร</dt><dd>{customer.phone}</dd></div><div><dt>จำนวนการจอง</dt><dd>{customer.bookingCount} ครั้ง</dd></div><div><dt>น้องแมว</dt><dd>{customer.pets.length} ตัว</dd></div></dl>
-              <div className={styles.petTags}>{customer.pets.length ? customer.pets.map((pet) => <span key={pet.petId}><strong>{pet.petName}</strong>{[pet.breed, pet.sex, pet.ageText].filter(Boolean).join(" · ") || "ยังไม่ระบุรายละเอียด"}</span>) : <em>ยังไม่มีข้อมูลน้องแมว</em>}</div>
+              <div className={styles.customerBody}>
+                <dl className={styles.customerDetails}>
+                  <div><dt>เบอร์โทร</dt><dd>{customer.phone}</dd></div>
+                  <div><dt>ชื่อ LINE</dt><dd>{customer.lineDisplayName || (customer.hasLineAccount ? "เชื่อมต่อแล้ว" : "ยังไม่เชื่อมต่อ")}</dd></div>
+                  <div><dt>จำนวนการจอง</dt><dd>{customer.bookingCount} ครั้ง</dd></div>
+                  <div><dt>การจองล่าสุด</dt><dd>{customer.latestBookingAt ? formatDateTime(customer.latestBookingAt) : "ยังไม่มี"}</dd></div>
+                </dl>
+                <section className={styles.petList}>
+                  <header><span>ข้อมูลน้องแมว</span><strong>{customer.pets.length} ตัว</strong></header>
+                  {customer.pets.length ? customer.pets.map((pet) => (
+                    <article key={pet.petId}>
+                      <div><strong>{pet.petName}</strong><span>{pet.breed || "ยังไม่ระบุสายพันธุ์"}</span></div>
+                      <dl><div><dt>เพศ</dt><dd>{pet.sex || "ไม่ระบุ"}</dd></div><div><dt>อายุ</dt><dd>{pet.ageText || "ไม่ระบุ"}</dd></div></dl>
+                    </article>
+                  )) : <em>ยังไม่มีข้อมูลน้องแมว</em>}
+                </section>
+              </div>
+              {canPurge && <footer className={styles.customerActions}><span>สำหรับล้างข้อมูลช่วงทดสอบเท่านั้น</span><button type="button" onClick={() => openDelete(customer)}>ลบข้อมูลครอบครัวทดสอบ</button></footer>}
             </article>
           ))}
         </div>
       ) : <EmptyBlock title="ไม่พบข้อมูลลูกค้า" detail="ลองเปลี่ยนคำค้น" />}
+      {customerToDelete && (
+        <StaffActionDialog
+          eyebrow="DELETE TEST FAMILY"
+          title={`ลบข้อมูลของ ${customerToDelete.fullName}`}
+          description={`ระบบจะลบลูกค้า น้องแมว ${customerToDelete.pets.length} ตัว และรายการจอง ${customerToDelete.bookingCount} รายการ รวมถึงการชำระเงินและข้อมูลที่เกี่ยวข้องทั้งหมด ข้อมูลจะกู้คืนไม่ได้`}
+          confirmLabel="ลบข้อมูลครอบครัวถาวร"
+          busyLabel="กำลังลบข้อมูลจาก Supabase..."
+          busy={deleting}
+          tone="danger"
+          requiredCode={customerToDelete.phone}
+          confirmation={confirmation}
+          error={deleteError}
+          onConfirmationChange={setConfirmation}
+          onCancel={closeDelete}
+          onConfirm={() => void deleteCustomerFamily()}
+        />
+      )}
     </section>
   );
 }
