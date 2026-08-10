@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { DashboardBooking, DashboardRoom } from "./staff-sections";
+import { StaffActionDialog } from "./staff-action-dialog";
 import crud from "./staff-crud.module.css";
 import styles from "./staff-sections.module.css";
 
@@ -98,6 +99,10 @@ async function errorFromResponse(response: Response, fallback: string): Promise<
 export function RoomsManager({ rooms, accessToken, onChanged, onError, canPurge }: ManagerProps & { rooms: DashboardRoom[] }) {
   const [editor, setEditor] = useState<RoomForm | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ kind: "archive" | "purge"; room: DashboardRoom } | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   const openNew = () => setEditor({
     roomCode: "",
@@ -140,39 +145,50 @@ export function RoomsManager({ rooms, accessToken, onChanged, onError, canPurge 
     }
   };
 
-  const archiveRoom = async (room: DashboardRoom) => {
-    if (!window.confirm(`ปิดใช้งานห้อง ${room.roomCode} — ${room.displayName} ใช่ไหม?\n\nประวัติเดิมจะยังอยู่และห้องจะหายจากรายการใช้งาน`)) return;
-    onError("");
-    try {
-      const response = await fetch(`/api/staff/rooms/${room.roomId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      if (!response.ok) throw new Error(await errorFromResponse(response, "ปิดใช้งานห้องไม่สำเร็จ"));
-      await onChanged(`ปิดใช้งานห้อง ${room.roomCode} แล้ว`);
-    } catch (requestError) {
-      onError(requestError instanceof Error ? requestError.message : "ปิดใช้งานห้องไม่สำเร็จ");
-    }
+  const openRoomAction = (kind: "archive" | "purge", room: DashboardRoom) => {
+    setPendingAction({ kind, room });
+    setConfirmation("");
+    setActionError("");
   };
-  const purgeRoom = async (room: DashboardRoom) => {
-    const confirmation = window.prompt(`ลบห้อง ${room.roomCode} ถาวร\n\nพิมพ์รหัสห้อง ${room.roomCode} เพื่อยืนยัน`);
-    if (confirmation === null) return;
-    if (confirmation.trim().toUpperCase() !== room.roomCode.toUpperCase()) {
-      onError("รหัสห้องไม่ตรง จึงยังไม่ได้ลบข้อมูล");
+
+  const closeRoomAction = () => {
+    if (actionBusy) return;
+    setPendingAction(null);
+    setConfirmation("");
+    setActionError("");
+  };
+
+  const runRoomAction = async () => {
+    if (!pendingAction || actionBusy) return;
+    const { kind, room } = pendingAction;
+    if (kind === "purge" && confirmation.trim().toUpperCase() !== room.roomCode.toUpperCase()) {
+      setActionError("รหัสห้องไม่ตรง จึงยังไม่ได้ลบข้อมูล");
       return;
     }
-    if (!window.confirm("ยืนยันครั้งสุดท้าย: ข้อมูลห้องและการจัดห้องที่ผูกอยู่จะถูกลบถาวรและกู้คืนไม่ได้")) return;
+    setActionBusy(true);
+    setActionError("");
     onError("");
     try {
-      const response = await fetch(`/api/staff/rooms/${room.roomId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ permanent: true, confirmation })
-      });
-      if (!response.ok) throw new Error(await errorFromResponse(response, "ลบห้องถาวรไม่สำเร็จ"));
-      await onChanged(`ลบห้องทดสอบ ${room.roomCode} ถาวรแล้ว`);
+      const requestOptions: RequestInit = kind === "purge"
+        ? {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ permanent: true, confirmation })
+        }
+        : { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } };
+      const response = await fetch(`/api/staff/rooms/${room.roomId}`, requestOptions);
+      if (!response.ok) throw new Error(await errorFromResponse(response, kind === "purge" ? "ลบห้องถาวรไม่สำเร็จ" : "ปิดใช้งานห้องไม่สำเร็จ"));
+      await onChanged(kind === "purge" ? `ลบห้องทดสอบ ${room.roomCode} ถาวรแล้ว` : `ปิดใช้งานห้อง ${room.roomCode} แล้ว`);
+      setPendingAction(null);
+      setConfirmation("");
     } catch (requestError) {
-      onError(requestError instanceof Error ? requestError.message : "ลบห้องถาวรไม่สำเร็จ");
+      const message = requestError instanceof Error
+        ? requestError.message
+        : kind === "purge" ? "ลบห้องถาวรไม่สำเร็จ" : "ปิดใช้งานห้องไม่สำเร็จ";
+      setActionError(message);
+      onError(message);
+    } finally {
+      setActionBusy(false);
     }
   };
 
@@ -186,7 +202,7 @@ export function RoomsManager({ rooms, accessToken, onChanged, onError, canPurge 
               <header><div><span>{room.roomCode}</span><h3>{room.displayName}</h3></div><i className={`${styles.roomStatus} ${styles[`room_${room.occupancy}`]}`}>{room.occupancy === "occupied" ? "มีน้องเข้าพัก" : room.occupancy === "upcoming" ? "มีคิวถัดไป" : room.occupancy === "available" ? "ว่าง" : room.occupancy === "maintenance" ? "ปิดซ่อม" : "ปิดใช้งาน"}</i></header>
               <div className={styles.roomMeta}><span>{roomTypeLabel(room.roomType)}</span><span>รองรับ {room.minimumPets}–{room.maximumPets} ตัว</span></div>
               {room.bookingCode ? <dl><div><dt>การจอง</dt><dd>{room.bookingCode}</dd></div><div><dt>ผู้ปกครอง</dt><dd>{room.customerName}</dd></div><div><dt>จำนวน</dt><dd>{room.petCount} ตัว</dd></div><div><dt>{room.occupancy === "upcoming" ? "เริ่ม" : "ถึง"}</dt><dd>{formatDateTime(room.occupancy === "upcoming" ? room.occupiedFrom! : room.occupiedUntil!)}</dd></div></dl> : <p className={styles.availableText}>พร้อมรับการจัดห้อง</p>}
-              <footer className={crud.cardActions}><button type="button" onClick={() => openEdit(room)}>แก้ไข</button><button type="button" className={crud.dangerText} onClick={() => void archiveRoom(room)}>ปิดใช้งาน</button>{canPurge && <button type="button" className={crud.purgeButton} onClick={() => void purgeRoom(room)}>ลบถาวร (ทดสอบ)</button>}</footer>
+              <footer className={crud.cardActions}><button type="button" onClick={() => openEdit(room)}>แก้ไข</button><button type="button" className={crud.dangerText} onClick={() => openRoomAction("archive", room)}>ปิดใช้งาน</button>{canPurge && <button type="button" className={crud.purgeButton} onClick={() => openRoomAction("purge", room)}>ลบถาวร (ทดสอบ)</button>}</footer>
             </article>
           ))}
         </div>
@@ -208,6 +224,25 @@ export function RoomsManager({ rooms, accessToken, onChanged, onError, canPurge 
           </form>
         </div>
       )}
+      {pendingAction && (
+        <StaffActionDialog
+          eyebrow={pendingAction.kind === "purge" ? "PERMANENT DELETE" : "ROOM STATUS"}
+          title={pendingAction.kind === "purge" ? `ลบห้อง ${pendingAction.room.roomCode} ถาวร` : `ปิดใช้งานห้อง ${pendingAction.room.roomCode}`}
+          description={pendingAction.kind === "purge"
+            ? "ข้อมูลห้องและการจัดห้องที่ผูกอยู่จะถูกลบถาวรและกู้คืนไม่ได้ เหมาะสำหรับล้างข้อมูลช่วงทดสอบเท่านั้น"
+            : "ประวัติเดิมจะยังอยู่ แต่ห้องนี้จะหายจากรายการใช้งานและจะไม่ถูกจัดให้การจองใหม่"}
+          confirmLabel={pendingAction.kind === "purge" ? "ลบข้อมูลถาวร" : "ยืนยันปิดใช้งาน"}
+          busyLabel={pendingAction.kind === "purge" ? "กำลังลบข้อมูลห้อง..." : "กำลังปิดใช้งานห้อง..."}
+          busy={actionBusy}
+          tone="danger"
+          requiredCode={pendingAction.kind === "purge" ? pendingAction.room.roomCode : undefined}
+          confirmation={confirmation}
+          error={actionError}
+          onConfirmationChange={setConfirmation}
+          onCancel={closeRoomAction}
+          onConfirm={() => void runRoomAction()}
+        />
+      )}
     </section>
   );
 }
@@ -217,6 +252,10 @@ export function BookingsManager({ bookings, accessToken, onChanged, onError, can
   const [status, setStatus] = useState("active");
   const [editor, setEditor] = useState<BookingForm | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ kind: "cancel" | "purge"; booking: DashboardBooking } | null>(null);
+  const [confirmation, setConfirmation] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
   const filtered = useMemo(() => bookings.filter((booking) => {
     const text = `${booking.bookingCode} ${booking.customerName} ${booking.phone} ${booking.petNames.join(" ")}`.toLowerCase();
     return text.includes(query.trim().toLowerCase()) && (status === "all"
@@ -254,45 +293,78 @@ export function BookingsManager({ bookings, accessToken, onChanged, onError, can
     }
   };
 
-  const cancelBooking = async (booking: DashboardBooking) => {
-    if (!window.confirm(`ยกเลิกรายการจอง ${booking.bookingCode} ใช่ไหม?\n\nระบบจะไม่ลบประวัติหรือยอดที่ชำระแล้ว แต่จะยกเลิกรายการและปล่อยห้อง`)) return;
-    onError("");
-    try {
-      const response = await fetch(`/api/staff/bookings/${booking.bookingId}`, { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } });
-      if (!response.ok) throw new Error(await errorFromResponse(response, "ยกเลิกรายการจองไม่สำเร็จ"));
-      await onChanged(`ยกเลิกรายการจอง ${booking.bookingCode} แล้ว`);
-    } catch (requestError) {
-      onError(requestError instanceof Error ? requestError.message : "ยกเลิกรายการจองไม่สำเร็จ");
-    }
+  const openBookingAction = (kind: "cancel" | "purge", booking: DashboardBooking) => {
+    setPendingAction({ kind, booking });
+    setConfirmation("");
+    setActionError("");
   };
-  const purgeBooking = async (booking: DashboardBooking) => {
-    const confirmation = window.prompt(`ลบรายการจอง ${booking.bookingCode} ถาวร\n\nพิมพ์รหัส ${booking.bookingCode} เพื่อยืนยัน`);
-    if (confirmation === null) return;
-    if (confirmation.trim().toUpperCase() !== booking.bookingCode.toUpperCase()) {
-      onError("รหัสการจองไม่ตรง จึงยังไม่ได้ลบข้อมูล");
+
+  const closeBookingAction = () => {
+    if (actionBusy) return;
+    setPendingAction(null);
+    setConfirmation("");
+    setActionError("");
+  };
+
+  const runBookingAction = async () => {
+    if (!pendingAction || actionBusy) return;
+    const { kind, booking } = pendingAction;
+    if (kind === "purge" && confirmation.trim().toUpperCase() !== booking.bookingCode.toUpperCase()) {
+      setActionError("รหัสการจองไม่ตรง จึงยังไม่ได้ลบข้อมูล");
       return;
     }
-    if (!window.confirm("ยืนยันครั้งสุดท้าย: บิล การชำระเงิน ประวัติสถานะ และข้อมูลประกอบของรายการนี้จะถูกลบถาวร")) return;
+    setActionBusy(true);
+    setActionError("");
     onError("");
     try {
-      const response = await fetch(`/api/staff/bookings/${booking.bookingId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ permanent: true, confirmation })
-      });
-      if (!response.ok) throw new Error(await errorFromResponse(response, "ลบรายการจองถาวรไม่สำเร็จ"));
-      await onChanged(`ลบรายการทดสอบ ${booking.bookingCode} ถาวรแล้ว`);
+      const requestOptions: RequestInit = kind === "purge"
+        ? {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ permanent: true, confirmation })
+        }
+        : { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } };
+      const response = await fetch(`/api/staff/bookings/${booking.bookingId}`, requestOptions);
+      if (!response.ok) throw new Error(await errorFromResponse(response, kind === "purge" ? "ลบรายการจองถาวรไม่สำเร็จ" : "ยกเลิกรายการจองไม่สำเร็จ"));
+      await onChanged(kind === "purge" ? `ลบรายการทดสอบ ${booking.bookingCode} ถาวรแล้ว` : `ยกเลิกรายการจอง ${booking.bookingCode} แล้ว`);
+      setPendingAction(null);
+      setConfirmation("");
     } catch (requestError) {
-      onError(requestError instanceof Error ? requestError.message : "ลบรายการจองถาวรไม่สำเร็จ");
+      const message = requestError instanceof Error
+        ? requestError.message
+        : kind === "purge" ? "ลบรายการจองถาวรไม่สำเร็จ" : "ยกเลิกรายการจองไม่สำเร็จ";
+      setActionError(message);
+      onError(message);
+    } finally {
+      setActionBusy(false);
     }
   };
 
   return (
     <section className={styles.contentPanel}>
       <header className={styles.panelHeaderWithFilters}><div><span>BOOKING LIST</span><h2>รายการจอง</h2><p>{filtered.length} จาก {bookings.length} รายการ</p></div><div className={styles.filters}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหารหัส ชื่อ เบอร์โทร หรือชื่อแมว" /><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="active">กำลังดำเนินการ</option><option value="all">ทั้งหมด</option><option value="pending_deposit">รอตรวจมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option><option value="checked_in">กำลังเข้าพัก</option><option value="checked_out">รับกลับแล้ว</option><option value="cancelled">ยกเลิก</option></select><a className={crud.primaryAction} href="/" target="_blank" rel="noreferrer">＋ เพิ่มรายการจอง</a></div></header>
-      {filtered.length ? <div className={styles.bookingList}>{filtered.map((booking) => <article key={booking.bookingId}><header><div><span>รหัสการจอง</span><strong>{booking.bookingCode}</strong></div><i className={`${styles.bookingStatus} ${styles[`booking_${booking.status}`]}`}>{statusLabel(booking.status)}</i></header><div className={styles.bookingBody}><dl><div><dt>ผู้ปกครอง</dt><dd>{booking.customerName}</dd></div><div><dt>เบอร์โทร</dt><dd>{booking.phone}</dd></div><div><dt>น้องแมว</dt><dd>{booking.petNames.join(", ") || `${booking.totalPets} ตัว`}</dd></div><div><dt>ห้อง</dt><dd>{booking.roomNames.join(", ") || roomTypeLabel(booking.roomType)}</dd></div></dl><dl><div><dt>เข้าพัก</dt><dd>{formatDateTime(booking.checkInAt)}</dd></div><div><dt>รับกลับ</dt><dd>{formatDateTime(booking.checkOutAt)}</dd></div><div><dt>ค่าบริการรวม</dt><dd>{formatBaht(booking.totalAmount)}</dd></div><div><dt>มัดจำ / คงเหลือ</dt><dd>{formatBaht(booking.depositAmount)} / {formatBaht(booking.balanceAmount)}</dd></div></dl></div><footer className={crud.bookingActions}><button type="button" disabled={["cancelled", "expired"].includes(booking.status)} onClick={() => openEdit(booking)}>แก้ไขวันเวลา/สถานะ</button><button type="button" className={crud.dangerText} disabled={["cancelled", "checked_out"].includes(booking.status)} onClick={() => void cancelBooking(booking)}>ยกเลิกรายการ</button>{canPurge && <button type="button" className={crud.purgeButton} onClick={() => void purgeBooking(booking)}>ลบถาวร (ทดสอบ)</button>}</footer></article>)}</div> : <div className={styles.sectionEmpty}><div>✓</div><h3>ไม่พบรายการจอง</h3><p>ลองเปลี่ยนคำค้นหรือสถานะ</p></div>}
+      {filtered.length ? <div className={styles.bookingList}>{filtered.map((booking) => <article key={booking.bookingId}><header><div><span>รหัสการจอง</span><strong>{booking.bookingCode}</strong></div><i className={`${styles.bookingStatus} ${styles[`booking_${booking.status}`]}`}>{statusLabel(booking.status)}</i></header><div className={styles.bookingBody}><dl><div><dt>ผู้ปกครอง</dt><dd>{booking.customerName}</dd></div><div><dt>เบอร์โทร</dt><dd>{booking.phone}</dd></div><div><dt>น้องแมว</dt><dd>{booking.petNames.join(", ") || `${booking.totalPets} ตัว`}</dd></div><div><dt>ห้อง</dt><dd>{booking.roomNames.join(", ") || roomTypeLabel(booking.roomType)}</dd></div></dl><dl><div><dt>เข้าพัก</dt><dd>{formatDateTime(booking.checkInAt)}</dd></div><div><dt>รับกลับ</dt><dd>{formatDateTime(booking.checkOutAt)}</dd></div><div><dt>ค่าบริการรวม</dt><dd>{formatBaht(booking.totalAmount)}</dd></div><div><dt>มัดจำ / คงเหลือ</dt><dd>{formatBaht(booking.depositAmount)} / {formatBaht(booking.balanceAmount)}</dd></div></dl></div><footer className={crud.bookingActions}><button type="button" disabled={["cancelled", "expired"].includes(booking.status)} onClick={() => openEdit(booking)}>แก้ไขวันเวลา/สถานะ</button><button type="button" className={crud.dangerText} disabled={["cancelled", "checked_out"].includes(booking.status)} onClick={() => openBookingAction("cancel", booking)}>ยกเลิกรายการ</button>{canPurge && <button type="button" className={crud.purgeButton} onClick={() => openBookingAction("purge", booking)}>ลบถาวร (ทดสอบ)</button>}</footer></article>)}</div> : <div className={styles.sectionEmpty}><div>✓</div><h3>ไม่พบรายการจอง</h3><p>ลองเปลี่ยนคำค้นหรือสถานะ</p></div>}
 
       {editor && <div className={crud.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditor(null); }}><form className={crud.modal} onSubmit={saveBooking} role="dialog" aria-modal="true" aria-label="แก้ไขรายการจอง"><header><div><span>BOOKING EDIT</span><h3>{editor.bookingCode}</h3></div><button type="button" onClick={() => setEditor(null)} disabled={saving}>×</button></header><div className={crud.formGrid}><label><span>วันเวลาเข้าพัก</span><input type="datetime-local" value={editor.checkInAt} onChange={(event) => setEditor({ ...editor, checkInAt: event.target.value })} required /></label><label><span>วันเวลารับกลับ</span><input type="datetime-local" value={editor.checkOutAt} onChange={(event) => setEditor({ ...editor, checkOutAt: event.target.value })} required /></label><label className={crud.fullField}><span>สถานะรายการจอง</span><select value={editor.status} onChange={(event) => setEditor({ ...editor, status: event.target.value })}><option value="draft">แบบร่าง</option><option value="held">ล็อกห้องชั่วคราว</option><option value="pending_deposit">รอตรวจมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option><option value="checked_in">กำลังเข้าพัก</option><option value="checked_out">รับกลับแล้ว</option><option value="cancellation_review">ตรวจสอบยกเลิก</option></select></label></div><div className={crud.notice}>การแก้ไขวันเวลาจะปรับช่วงเวลาของห้องที่จัดไว้ให้ตรงกัน และทุกการเปลี่ยนแปลงจะถูกบันทึกใน Audit Log</div><footer><button type="button" onClick={() => setEditor(null)} disabled={saving}>ยกเลิก</button><button type="submit" className={crud.saveButton} disabled={saving}>{saving ? "กำลังบันทึก..." : "บันทึกรายการจอง"}</button></footer></form></div>}
+      {pendingAction && (
+        <StaffActionDialog
+          eyebrow={pendingAction.kind === "purge" ? "PERMANENT DELETE" : "BOOKING STATUS"}
+          title={pendingAction.kind === "purge" ? `ลบ ${pendingAction.booking.bookingCode} ถาวร` : `ยกเลิก ${pendingAction.booking.bookingCode}`}
+          description={pendingAction.kind === "purge"
+            ? "บิล การชำระเงิน ประวัติสถานะ และข้อมูลประกอบของรายการนี้จะถูกลบถาวรและกู้คืนไม่ได้"
+            : "ระบบจะเก็บประวัติและยอดที่ชำระแล้วไว้ แต่จะยกเลิกรายการจองและปล่อยห้องให้ใช้งานได้อีกครั้ง"}
+          confirmLabel={pendingAction.kind === "purge" ? "ลบรายการถาวร" : "ยืนยันยกเลิกรายการ"}
+          busyLabel={pendingAction.kind === "purge" ? "กำลังลบรายการจอง..." : "กำลังยกเลิกรายการ..."}
+          busy={actionBusy}
+          tone="danger"
+          requiredCode={pendingAction.kind === "purge" ? pendingAction.booking.bookingCode : undefined}
+          confirmation={confirmation}
+          error={actionError}
+          onConfirmationChange={setConfirmation}
+          onCancel={closeBookingAction}
+          onConfirm={() => void runBookingAction()}
+        />
+      )}
     </section>
   );
 }

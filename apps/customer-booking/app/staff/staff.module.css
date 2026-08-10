@@ -599,3 +599,62 @@
   .depositCard footer button { width: 100%; min-width: 0; }
   .warningBox { margin: 0 13px 12px; }
 }
+
+/* Dashboard interactive feedback */
+.nav button,
+.loginForm button,
+.depositCard footer button,
+.userActions button,
+.reviewPanel > header a {
+  cursor: pointer;
+  transition: transform 150ms ease, color 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+@media (hover: hover) {
+  .nav button:not(:disabled):hover {
+    transform: translateX(3px);
+    color: #fff;
+    background: rgba(240, 168, 208, 0.13);
+  }
+
+  .nav .active:hover {
+    color: #2d242a;
+    background: #f5b8da;
+  }
+
+  .loginForm button:not(:disabled):hover,
+  .depositCard footer button:not(:disabled):hover,
+  .userActions button:not(:disabled):hover,
+  .reviewPanel > header a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(73, 57, 67, 0.18);
+  }
+}
+
+.nav button:not(:disabled):active,
+.loginForm button:not(:disabled):active,
+.depositCard footer button:not(:disabled):active,
+.userActions button:not(:disabled):active,
+.reviewPanel > header a:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 3px 9px rgba(73, 57, 67, 0.12);
+}
+
+.nav button:focus-visible,
+.loginForm button:focus-visible,
+.depositCard footer button:focus-visible,
+.userActions button:focus-visible,
+.reviewPanel > header a:focus-visible {
+  outline: 3px solid rgba(240, 168, 208, 0.48);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav button,
+  .loginForm button,
+  .depositCard footer button,
+  .userActions button,
+  .reviewPanel > header a {
+    transition: none;
+  }
+}

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { CustomersSection, OverviewSection } from "./staff-sections";
 import { BookingsManager, RoomsManager } from "./staff-crud-sections";
+import { StaffActionDialog } from "./staff-action-dialog";
 import type { DashboardSection, StaffDashboardData } from "./staff-sections";
 import extraStyles from "./staff-dashboard-extras.module.css";
 import styles from "./staff.module.css";
@@ -88,6 +89,7 @@ export function StaffDashboard() {
   const [loading, setLoading] = useState(true);
   const [authenticating, setAuthenticating] = useState(false);
   const [confirmingCode, setConfirmingCode] = useState("");
+  const [depositToConfirm, setDepositToConfirm] = useState<PendingDeposit | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -204,15 +206,13 @@ export function StaffDashboard() {
     setPendingDeposits([]);
     setDashboardData(null);
     setActiveSection("overview");
+    setDepositToConfirm(null);
     setSuccess("");
     setError("");
   };
 
   const confirmDeposit = async (item: PendingDeposit) => {
-    const approved = window.confirm(
-      `ตรวจสลิปใน LINE OA แล้วใช่ไหม?\n\n${item.bookingCode}\nมัดจำ ${formatBaht(item.depositAmount)}\n\nเมื่อยืนยัน ระบบจะส่งบิลใบที่สองให้ลูกค้าทันที`
-    );
-    if (!approved || confirmingCode || !accessToken) return;
+    if (confirmingCode || !accessToken) return;
 
     setConfirmingCode(item.bookingCode);
     setError("");
@@ -233,6 +233,7 @@ export function StaffDashboard() {
       }
       if (!response.ok) throw new Error(payload.error ?? "ยืนยันมัดจำไม่สำเร็จ");
       await loadStaffData(accessToken);
+      setDepositToConfirm(null);
       setSuccess(`ยืนยันมัดจำ ${item.bookingCode} แล้ว และส่งบิลวันเช็กอินเข้า LINE ลูกค้าเรียบร้อย`);
     } catch (confirmationError) {
       setError(confirmationError instanceof Error ? confirmationError.message : "ยืนยันมัดจำไม่สำเร็จ");
@@ -326,7 +327,7 @@ export function StaffDashboard() {
                         <div className={styles.amountCard}><span>ยอดมัดจำที่ต้องตรงกับสลิป</span><strong>{formatBaht(item.depositAmount)}</strong><small>ยอดคงเหลือวันเช็กอิน {formatBaht(item.balanceAmount)}</small></div>
                       </div>
                       {!item.hasLineAccount && <div className={styles.warningBox}>บัญชีลูกค้าไม่มี LINE user ID จึงยังส่งบิลใบที่สองไม่ได้</div>}
-                      <footer><span>ลูกค้าแจ้งเมื่อ {formatDateTime(item.notifiedAt)}</span><button type="button" disabled={!item.hasLineAccount || Boolean(confirmingCode)} onClick={() => void confirmDeposit(item)}>{confirmingCode === item.bookingCode ? "กำลังยืนยันและส่งบิล..." : "✓ ยืนยันสลิปและส่งบิลใบที่สอง"}</button></footer>
+                      <footer><span>ลูกค้าแจ้งเมื่อ {formatDateTime(item.notifiedAt)}</span><button type="button" disabled={!item.hasLineAccount || Boolean(confirmingCode)} onClick={() => { setError(""); setDepositToConfirm(item); }}>{confirmingCode === item.bookingCode ? "กำลังยืนยันและส่งบิล..." : "✓ ยืนยันสลิปและส่งบิลใบที่สอง"}</button></footer>
                     </article>
                   ))}
                 </div>
@@ -335,6 +336,24 @@ export function StaffDashboard() {
           </>
         )}
       </main>
+      {depositToConfirm && (
+        <StaffActionDialog
+          eyebrow="PAYMENT CONFIRMATION"
+          title={`ยืนยันมัดจำ ${depositToConfirm.bookingCode}`}
+          description={`โปรดตรวจรูปสลิปใน LINE OA ว่ายอดตรงกับ ${formatBaht(depositToConfirm.depositAmount)} เมื่อยืนยันแล้ว ระบบจะส่งบิลยอดคงเหลือ ${formatBaht(depositToConfirm.balanceAmount)} ให้ลูกค้าทันที`}
+          confirmLabel="ยืนยันสลิปและส่งบิล"
+          busyLabel="กำลังยืนยันและส่งบิล..."
+          busy={confirmingCode === depositToConfirm.bookingCode}
+          error={error}
+          onCancel={() => {
+            if (!confirmingCode) {
+              setDepositToConfirm(null);
+              setError("");
+            }
+          }}
+          onConfirm={() => void confirmDeposit(depositToConfirm)}
+        />
+      )}
     </div>
   );
 }

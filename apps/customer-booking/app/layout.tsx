@@ -23,9 +23,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "ตรวจห้องว่างและส่งคำขอจองโรงแรมแมวเมืองเลยผ่าน LINE OA",
     applicationName: "LOEI CAT HOTEL Booking",
     icons: {
-      icon: [{ url: "/loeicathotel-logo.webp", type: "image/webp" }],
-      shortcut: "/loeicathotel-logo.webp",
-      apple: "/loeicathotel-logo.webp"
+      icon: [{ url: "/api/favicon", type: "image/svg+xml" }],
+      shortcut: "/api/favicon"
     },
     formatDetection: { telephone: false },
     openGraph: {

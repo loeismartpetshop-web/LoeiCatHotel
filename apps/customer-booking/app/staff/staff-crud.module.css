@@ -249,3 +249,58 @@
   color: #fff !important;
   background: #9f315f !important;
 }
+
+/* Interactive feedback */
+.primaryAction,
+.saveButton,
+.cardActions button,
+.bookingActions button,
+.modal button {
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.primaryAction,
+.saveButton {
+  box-shadow: 0 9px 20px rgba(73, 57, 67, 0.17);
+}
+
+@media (hover: hover) {
+  .primaryAction:hover,
+  .saveButton:not(:disabled):hover,
+  .cardActions button:not(:disabled):hover,
+  .bookingActions button:not(:disabled):hover,
+  .modal button:not(:disabled):hover {
+    transform: translateY(-2px);
+    filter: brightness(1.03);
+    box-shadow: 0 10px 22px rgba(73, 57, 67, 0.17);
+  }
+}
+
+.primaryAction:active,
+.saveButton:not(:disabled):active,
+.cardActions button:not(:disabled):active,
+.bookingActions button:not(:disabled):active,
+.modal button:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 3px 8px rgba(73, 57, 67, 0.12);
+}
+
+.primaryAction:focus-visible,
+.saveButton:focus-visible,
+.cardActions button:focus-visible,
+.bookingActions button:focus-visible,
+.modal button:focus-visible {
+  outline: 3px solid rgba(240, 168, 208, 0.45);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction,
+  .saveButton,
+  .cardActions button,
+  .bookingActions button,
+  .modal button {
+    transition: none;
+  }
+}

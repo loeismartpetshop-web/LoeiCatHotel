@@ -1,0 +1,268 @@
+.backdrop {
+  position: fixed;
+  z-index: 160;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(45, 36, 42, 0.66);
+  backdrop-filter: blur(7px);
+  animation: fadeIn 160ms ease-out;
+}
+
+.dialog {
+  overflow: hidden;
+  width: min(480px, 100%);
+  border: 1px solid #eadce4;
+  border-radius: 24px;
+  color: #2d242a;
+  background: #fffefd;
+  box-shadow: 0 30px 90px rgba(45, 36, 42, 0.36);
+  animation: liftIn 190ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dialog > header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px;
+  border-bottom: 1px solid #eadce4;
+  background: linear-gradient(125deg, #fcebf5, #fff9fc);
+}
+
+.dialog > header span {
+  display: block;
+  color: #b04f82;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.dialog > header h2 {
+  margin: 3px 0 0;
+  font-family: "Pridi", Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #493943;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 8px 22px rgba(73, 57, 67, 0.22);
+}
+
+.dangerIcon {
+  background: #b54172;
+  box-shadow: 0 8px 22px rgba(181, 65, 114, 0.24);
+}
+
+.body {
+  display: grid;
+  gap: 15px;
+  padding: 22px;
+}
+
+.body > p {
+  margin: 0;
+  color: #68555f;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.body label {
+  display: grid;
+  gap: 8px;
+  padding: 15px;
+  border: 1px solid #f0d1e1;
+  border-radius: 15px;
+  background: #fff7fb;
+}
+
+.body label > span {
+  color: #68555f;
+  font-size: 13px;
+}
+
+.body label strong {
+  color: #9f315f;
+  letter-spacing: 0.03em;
+}
+
+.body input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid #dccbd5;
+  border-radius: 12px;
+  color: #2d242a;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  outline: none;
+}
+
+.body input:focus {
+  border-color: #f0a8d0;
+  box-shadow: 0 0 0 4px rgba(240, 168, 208, 0.2);
+}
+
+.body label small,
+.error {
+  color: #a64a66;
+  font-size: 12px;
+}
+
+.error {
+  padding: 11px 13px;
+  border: 1px solid #e8b5c6;
+  border-radius: 12px;
+  background: #fff0f5;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid #f0d1e1;
+  border-radius: 13px;
+  background: #fcebf5;
+}
+
+.progress i {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 3px solid rgba(73, 57, 67, 0.16);
+  border-top-color: #493943;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+.progress strong,
+.progress span {
+  display: block;
+}
+
+.progress strong {
+  font-size: 13px;
+}
+
+.progress span {
+  margin-top: 2px;
+  color: #74636e;
+  font-size: 11px;
+}
+
+.dialog > footer {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 10px;
+  padding: 16px 22px 20px;
+  border-top: 1px solid #eadce4;
+  background: #fffafd;
+}
+
+.dialog button {
+  min-height: 48px;
+  padding: 10px 15px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease, background-color 150ms ease;
+}
+
+.cancelButton {
+  border: 1px solid #dccbd5;
+  color: #493943;
+  background: #fff;
+}
+
+.confirmButton {
+  border: 1px solid #493943;
+  color: #fff;
+  background: #493943;
+  box-shadow: 0 10px 24px rgba(73, 57, 67, 0.2);
+}
+
+.dangerButton {
+  border-color: #9f315f;
+  background: #9f315f;
+  box-shadow: 0 10px 24px rgba(159, 49, 95, 0.22);
+}
+
+.dialog button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .dialog button:not(:disabled):hover {
+    transform: translateY(-2px);
+    filter: brightness(1.04);
+    box-shadow: 0 12px 28px rgba(73, 57, 67, 0.2);
+  }
+}
+
+.dialog button:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 3px 9px rgba(73, 57, 67, 0.14);
+}
+
+.dialog button:focus-visible,
+.body input:focus-visible {
+  outline: 3px solid rgba(240, 168, 208, 0.42);
+  outline-offset: 2px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+}
+
+@keyframes liftIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 680px) {
+  .backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .dialog {
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .dialog > footer {
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .dialog,
+  .progress i {
+    animation: none;
+  }
+
+  .dialog button {
+    transition: none;
+  }
+}
