@@ -1,7 +1,75 @@
 # HANDOFF — LOEI CAT HOTEL Booking System
 
-อัปเดตล่าสุด: 5 สิงหาคม 2026  
-สถานะ: UX/UI Prototype และ System Design พร้อมส่งต่อพัฒนา แต่ยังไม่ใช่ระบบ Production
+อัปเดตล่าสุด: 10 สิงหาคม 2026 เวลา 22:00 น. (Asia/Bangkok)
+สถานะ: Customer Booking Web App และ Staff Dashboard deploy บน Vercel Production และเชื่อม Supabase/LINE OA แล้ว ปัจจุบันยังอยู่ช่วง Pilot/Test และยังไม่ถือว่า Production-ready จนกว่าจะผ่าน Acceptance Test ครบ
+
+## 0. งานล่าสุดวันที่ 10 สิงหาคม 2026
+
+### Production และจุดเข้าใช้งาน
+
+- Production alias: `https://loeicathotel.vercel.app`
+- หน้าจองลูกค้า: `/`
+- Staff Dashboard: `/staff`
+- GitHub: `loeismartpetshop-web/LoeiCatHotel` สาขา `main`
+- Vercel clean build ล่าสุดผ่านทั้ง Next.js build, TypeScript และการสร้าง route
+
+### Staff Dashboard และ Supabase
+
+- เพิ่ม Staff Dashboard ที่ใช้ Supabase Auth และตรวจสิทธิ์จาก `public.staff_profiles`
+- Role ที่เปิดใช้งานในโค้ดปัจจุบันคือ `owner` และ `front_desk`
+- เปิดเมนูภาพรวม ตารางห้อง รายการจอง การชำระเงิน และลูกค้า/น้องแมว
+- เพิ่ม API dashboard รวมข้อมูลจาก `rooms`, `bookings`, `customers`, `pets`, `payments` และตารางที่เกี่ยวข้อง
+- เพิ่มคิวตรวจมัดจำจาก LINE OA พนักงานตรวจสลิปแล้วกดยืนยัน จากนั้นระบบส่งบิลยอดคงเหลือ/ชำระวันเช็กอินกลับให้ลูกค้าผ่าน LINE
+- เพิ่มการเพิ่ม/แก้ไข/ปิดใช้งานห้อง และการแก้ไขวันเวลา/สถานะหรือยกเลิกรายการจอง
+- ปรับ UI ของลูกค้าและน้องแมวให้แสดงเป็นรายการแนวตั้ง อ่านง่าย และค้นหาได้
+
+### เครื่องมือล้างข้อมูลช่วงทดสอบ
+
+- Owner สามารถลบห้องหรือรายการจองทดสอบเป็นรายรายการได้ โดยต้องยืนยันด้วยรหัสห้องหรือรหัสการจอง
+- Owner สามารถลบข้อมูลลูกค้าหนึ่งครอบครัว พร้อมน้องแมว การจอง การชำระเงิน และข้อมูลลูกที่เชื่อมโยงได้ โดยยืนยันด้วยเบอร์โทร
+- เพิ่มปุ่ม `ลบข้อมูลทั้งหมด` แยกใน 4 หมวด: ห้อง, การจอง, การชำระเงิน, ลูกค้าและน้องแมว
+- ปุ่มลบทั้งหมวดแสดงเฉพาะ Owner และต้องกรอกรหัสผ่านบัญชี Owner ปัจจุบัน ระบบตรวจซ้ำกับ Supabase Auth ทุกครั้ง
+- รหัสผ่านไม่ถูกบันทึกลงฐานข้อมูล, browser storage, source code หรือ log
+- การลบทำตามลำดับ child-first เพื่อไม่ติด Foreign Key เช่น `booking_pets`, `payments`, `booking_room_allocations` และประวัติที่เกี่ยวข้อง
+- **คำเตือน:** การลบทั้งหมวดเป็น Permanent Delete และกู้คืนไม่ได้ ใช้เฉพาะข้อมูลทดสอบเท่านั้น ห้ามใช้หลังเริ่มรับข้อมูลจริงโดยไม่มี backup ที่ตรวจสอบแล้ว
+
+ขอบเขตการลบทั้งหมวด:
+
+| หมวด | ข้อมูลที่ลบ | ข้อมูลที่ยังอยู่ |
+|---|---|---|
+| ห้อง | ห้องและการจัดห้องที่ผูกอยู่ | การจอง ลูกค้า น้องแมว และยอดการจอง |
+| การจอง | การจอง การชำระเงิน ประวัติสถานะ การจัดห้อง ข้อความ และข้อมูลประกอบ | ลูกค้า น้องแมว และห้อง |
+| การชำระเงิน | รายการชำระเงินและคำขอคืนเงินที่อ้างถึงรายการชำระ | การจองและ price snapshot ลูกค้า น้องแมว และห้อง |
+| ลูกค้าและน้องแมว | ลูกค้า น้องแมว การจอง การชำระเงิน และข้อมูลลูกที่เกี่ยวข้อง | ห้อง |
+
+### UX/UI ที่ปรับล่าสุด
+
+- ใช้ธีมสีชมพูตามโลโก้ร้านทั้ง Customer Booking และ Staff Dashboard
+- ใช้โลโก้ร้านแบบวงกลมและ favicon จากโลโก้จริง
+- ปุ่มและ action dialog มี hover, active, loading และ error state ที่ชัดเจน
+- หน้าต่างยืนยันการลบใช้ UI ของระบบ ไม่ใช้ browser prompt แบบเดิม
+- บน desktop จัดกลุ่มการ์ดกรอกข้อมูลฝั่งขวาให้อยู่กึ่งกลางแนวตั้งเมื่อเนื้อหาสั้น โดยไม่กระทบ tablet/mobile และขั้นตอนที่เนื้อหายาว
+
+### Commit ของงานวันนี้
+
+| Commit | รายการ |
+|---|---|
+| `9093b82` | เชื่อม Staff Deposit Dashboard |
+| `15adfbe` | เปิดใช้งานทุกหมวดใน Staff Dashboard |
+| `3b91ae1` | เพิ่มการจัดการห้องและรายการจอง |
+| `52ed07a` | เพิ่ม Owner purge สำหรับข้อมูลทดสอบรายรายการ |
+| `242f4ef` | ปรับ action dialog, interaction และ favicon |
+| `47a5d28` | เพิ่มการลบข้อมูลลูกค้าทั้งครอบครัว |
+| `1e23ef1` | เพิ่มการลบข้อมูลทั้งหมดแบบตรวจรหัสผ่าน Owner |
+| `ad88b13` | จัดการ์ดหน้าจอง desktop ให้อยู่กึ่งกลางแนวตั้ง |
+
+### ผลตรวจล่าสุด
+
+- `pnpm --filter @loei-cat-hotel/customer-booking typecheck` ผ่าน
+- Vercel Production build ผ่าน
+- `https://loeicathotel.vercel.app/` และ `/staff` ตอบ HTTP 200
+- API ลบทั้งหมวดเมื่อไม่มี Authorization ตอบ HTTP 401 และไม่แตะข้อมูล Supabase
+- ไม่ได้ทดลองลบข้อมูลจริงในการตรวจ Production
 
 ## 1. วัตถุประสงค์
 
@@ -223,11 +291,13 @@ PUBLIC_APP_URL
 
 - มี root `package.json`, `pnpm-workspace.yaml` และ TypeScript base config
 - มี `packages/domain` พร้อมกฎคำนวณราคาตั้งต้น มัดจำ และเพดาน 30 ตัว
-- `apps/customer-booking` เป็น vinext/React Web App ที่ build และ deploy ได้แล้ว แต่ยังเป็นโหมดต้นแบบและยังไม่เชื่อม Booking API/Supabase
-- `apps/staff-dashboard` ยังเป็น prototype HTML ไม่ใช่ application framework ที่ build/deploy ได้
-- `services/booking-api` มีเฉพาะขอบเขต endpoint และโครงสร้างที่เสนอ
-- มี dependency install และ `pnpm-lock.yaml` สำหรับ Customer Booking App แล้ว แต่ยังไม่มี Supabase project, integration test runner หรือ CI/CD ที่พร้อมใช้งาน
-- อย่ารายงานว่า Production ready จนกว่าจะผ่าน acceptance test และทดสอบกับ LINE/เครื่องพิมพ์จริง
+- `apps/customer-booking` เป็น Next.js Web App ที่มีหน้าจองลูกค้า, Booking API, LINE webhook และ Staff Dashboard ในแอปเดียวกัน
+- Customer Booking และ Staff Dashboard เชื่อม Supabase Production ผ่าน environment variables ของ Vercel แล้ว
+- Staff Dashboard ที่ใช้งานจริงอยู่ที่ `apps/customer-booking/app/staff`; ส่วน `apps/staff-dashboard/prototypes` เป็นไฟล์ต้นแบบอ้างอิงเดิม
+- Server API ที่ใช้งานจริงอยู่ใต้ `apps/customer-booking/app/api`; `services/booking-api` ยังเป็นโครงสร้างที่เสนอเดิม
+- Deploy Production ผ่าน Vercel และ source code หลักอยู่ใน GitHub สาขา `main`
+- ยังไม่มี integration test runner/CI ที่ครอบคลุมทุก booking flow, concurrent booking, LINE delivery และการลบข้อมูล
+- อย่ารายงานว่า Production-ready จนกว่าจะผ่าน acceptance test, pilot กับพนักงาน, ทดสอบ LINE บน iOS/Android และทดสอบเครื่องพิมพ์จริง
 
 ## 12. ลำดับการพัฒนาที่แนะนำ
 
