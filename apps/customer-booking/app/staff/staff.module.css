@@ -1,0 +1,601 @@
+.loginShell,
+.dashboardShell {
+  --primary: #493943;
+  --primary-deep: #2d242a;
+  --accent: #f0a8d0;
+  --accent-soft: #fcebf5;
+  --background: #f9edf4;
+  --surface: #fffefd;
+  --text: #2d242a;
+  --muted: #74636e;
+  --line: #e5d8e0;
+  --danger: #a64a66;
+  --shadow: 0 22px 70px rgba(73, 57, 67, 0.14);
+  color: var(--text);
+  font-family: "IBM Plex Sans Thai", Tahoma, sans-serif;
+}
+
+.loginShell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(240, 168, 208, 0.34), transparent 32%),
+    radial-gradient(circle at 85% 80%, rgba(73, 57, 67, 0.12), transparent 30%),
+    var(--background);
+}
+
+.loginCard {
+  width: min(100%, 470px);
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.loginBrand,
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.loginBrand img,
+.brand img {
+  border: 1px solid rgba(73, 57, 67, 0.18);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.loginBrand strong,
+.loginBrand span,
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.loginBrand strong {
+  font-size: 19px;
+  letter-spacing: 0.04em;
+}
+
+.loginBrand span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.loginIntro {
+  margin: 30px 0 22px;
+}
+
+.loginIntro > span,
+.eyebrow,
+.reviewPanel > header span {
+  color: #b04f82;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.loginIntro h1 {
+  margin: 6px 0 5px;
+  font-family: "Pridi", Georgia, serif;
+  font-size: 31px;
+  font-weight: 500;
+}
+
+.loginIntro p,
+.topbar p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.loginForm {
+  display: grid;
+  gap: 15px;
+}
+
+.loginForm label span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loginForm input {
+  width: 100%;
+  min-height: 50px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+}
+
+.loginForm input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(240, 168, 208, 0.18);
+}
+
+.loginForm button,
+.depositCard footer button {
+  min-height: 50px;
+  border: 0;
+  border-radius: 13px;
+  color: #fff;
+  background: var(--primary);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(73, 57, 67, 0.2);
+}
+
+.loginForm button:disabled,
+.depositCard footer button:disabled,
+.userActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.loginFoot {
+  display: block;
+  margin-top: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.dashboardShell {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  background: var(--background);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: 27px 20px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 15% 90%, rgba(240, 168, 208, 0.2), transparent 34%),
+    linear-gradient(155deg, #211a1f, #493943);
+}
+
+.brand strong {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.brand span {
+  margin-top: 2px;
+  color: #e7dbe2;
+  font-size: 11px;
+}
+
+.nav {
+  display: grid;
+  gap: 7px;
+  margin-top: 35px;
+}
+
+.nav button {
+  min-height: 47px;
+  padding: 10px 13px;
+  border: 0;
+  border-radius: 12px;
+  color: #e9dfe5;
+  background: transparent;
+  text-align: left;
+  font-weight: 700;
+}
+
+.nav button span {
+  display: inline-block;
+  width: 27px;
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.nav button:disabled {
+  opacity: 0.48;
+}
+
+.nav .active {
+  color: #2d242a;
+  background: var(--accent);
+  opacity: 1;
+}
+
+.nav .active span {
+  color: #493943;
+}
+
+.sidebarFoot {
+  margin-top: auto;
+  color: #e7dbe2;
+  font-size: 11px;
+}
+
+.sidebarFoot i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #7bd09d;
+  box-shadow: 0 0 0 4px rgba(123, 208, 157, 0.13);
+}
+
+.main {
+  min-width: 0;
+  padding: 35px clamp(22px, 4vw, 58px) 60px;
+}
+
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.topbar h1 {
+  margin: 5px 0 2px;
+  font-family: "Pridi", Georgia, serif;
+  font-size: clamp(29px, 3vw, 42px);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.userActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.userActions > div {
+  margin-right: 4px;
+  text-align: right;
+}
+
+.userActions strong,
+.userActions span {
+  display: block;
+}
+
+.userActions strong {
+  font-size: 13px;
+}
+
+.userActions span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.userActions button,
+.reviewPanel > header a {
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--primary);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 26px 0 18px;
+}
+
+.stats article {
+  min-height: 125px;
+  padding: 19px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 10px 32px rgba(73, 57, 67, 0.07);
+}
+
+.stats span,
+.stats small,
+.stats strong {
+  display: block;
+}
+
+.stats span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stats strong {
+  margin-top: 8px;
+  color: var(--primary);
+  font-size: clamp(24px, 2.5vw, 34px);
+  line-height: 1.15;
+}
+
+.stats small {
+  margin-top: 5px;
+  color: #a64a7a;
+  font-size: 11px;
+}
+
+.reviewPanel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.reviewPanel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(100deg, #fffefd, #fff5fa);
+}
+
+.reviewPanel h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.depositList {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.depositCard {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.depositHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #fff9fc;
+}
+
+.depositHeader span,
+.depositHeader strong {
+  display: block;
+}
+
+.depositHeader div span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.depositHeader div strong {
+  color: var(--primary);
+  font-size: 18px;
+  letter-spacing: 0.03em;
+}
+
+.pendingBadge {
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #9a4774;
+  background: var(--accent-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.depositGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(230px, 0.6fr);
+  gap: 18px;
+  padding: 18px;
+}
+
+.depositGrid dl {
+  margin: 0;
+}
+
+.depositGrid dl > div {
+  display: grid;
+  grid-template-columns: 125px 1fr;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px dashed #eee2e9;
+}
+
+.depositGrid dl > div:last-child {
+  border: 0;
+}
+
+.depositGrid dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.depositGrid dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.amountCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  border: 1px solid #f1c9df;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  text-align: center;
+}
+
+.amountCard span {
+  color: #8b5372;
+  font-size: 12px;
+}
+
+.amountCard strong {
+  margin-top: 7px;
+  color: #b43f79;
+  font-size: 28px;
+}
+
+.amountCard small {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.depositCard footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+}
+
+.depositCard footer > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.depositCard footer button {
+  min-width: 260px;
+  padding: 11px 18px;
+}
+
+.successBox,
+.errorBox,
+.warningBox {
+  padding: 13px 15px;
+  border-radius: 13px;
+  font-size: 13px;
+}
+
+.successBox {
+  margin-top: 18px;
+  border: 1px solid #afd3bd;
+  color: #27613e;
+  background: #eaf7ef;
+}
+
+.errorBox {
+  margin-bottom: 15px;
+  border: 1px solid #e8b5c6;
+  color: var(--danger);
+  background: #fff0f5;
+}
+
+.warningBox {
+  margin: 0 18px 14px;
+  border: 1px solid #ecc9a7;
+  color: #8e5425;
+  background: #fff5e9;
+}
+
+.emptyState {
+  min-height: 300px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.emptyState > div {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--primary);
+  font-size: 25px;
+}
+
+.emptyState h3 {
+  margin: 13px 0 3px;
+  color: var(--text);
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.spinner {
+  width: 38px;
+  height: 38px;
+  border: 4px solid var(--accent-soft);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 950px) {
+  .dashboardShell { grid-template-columns: 84px minmax(0, 1fr); }
+  .sidebar { padding: 22px 12px; }
+  .brand { justify-content: center; }
+  .brand div, .sidebarFoot { display: none; }
+  .nav button { padding: 9px 5px; text-align: center; font-size: 0; }
+  .nav button span { width: auto; font-size: 20px; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .stats article:last-child { grid-column: 1 / -1; }
+  .depositGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .loginShell { padding: 14px; }
+  .loginCard { padding: 23px 18px; border-radius: 22px; }
+  .dashboardShell { display: block; }
+  .sidebar { position: static; height: auto; display: block; padding: 13px 14px; }
+  .brand { justify-content: flex-start; }
+  .brand div { display: block; }
+  .nav { display: flex; overflow-x: auto; margin-top: 12px; padding-bottom: 2px; }
+  .nav button { min-width: 54px; min-height: 42px; white-space: nowrap; }
+  .nav button:not(.active) { display: none; }
+  .nav .active { width: 100%; font-size: 13px; }
+  .nav .active span { margin-right: 7px; font-size: 17px; }
+  .main { padding: 21px 13px 42px; }
+  .topbar { display: block; }
+  .topbar h1 { font-size: 31px; }
+  .userActions { margin-top: 16px; }
+  .userActions > div { margin-right: auto; text-align: left; }
+  .stats { grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 18px; }
+  .stats article { min-height: 112px; padding: 14px; }
+  .stats article:last-child { grid-column: 1 / -1; }
+  .reviewPanel > header { display: block; padding: 16px; }
+  .reviewPanel > header a { display: inline-flex; align-items: center; margin-top: 12px; }
+  .depositList { padding: 10px; }
+  .depositHeader { align-items: flex-start; padding: 13px; }
+  .depositHeader div strong { font-size: 15px; }
+  .depositGrid { padding: 13px; }
+  .depositGrid dl > div { grid-template-columns: 92px 1fr; }
+  .amountCard { padding: 16px; }
+  .depositCard footer { display: grid; padding: 13px; }
+  .depositCard footer button { width: 100%; min-width: 0; }
+  .warningBox { margin: 0 13px 12px; }
+}

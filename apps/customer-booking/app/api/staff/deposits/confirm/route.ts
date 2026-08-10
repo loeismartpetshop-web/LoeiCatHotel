@@ -95,25 +95,25 @@ async function pushCheckinReceipt(booking: BookingRow, customer: CustomerRow, pa
         contents: {
           type: "bubble",
           size: "mega",
-          header: { type: "box", layout: "vertical", backgroundColor: "#E5F1EA", paddingAll: "16px", contents: [
-            { type: "text", text: "LOEI CAT HOTEL", weight: "bold", color: "#173C30", size: "lg" },
-            { type: "text", text: "ยืนยันมัดจำแล้ว ✓", color: "#315B4B", size: "sm", margin: "xs" }
+          header: { type: "box", layout: "vertical", backgroundColor: "#F9EDF4", paddingAll: "16px", contents: [
+            { type: "text", text: "LOEI CAT HOTEL", weight: "bold", color: "#493943", size: "lg" },
+            { type: "text", text: "ยืนยันมัดจำแล้ว ✓", color: "#493943", size: "sm", margin: "xs" }
           ] },
           body: { type: "box", layout: "vertical", paddingAll: "16px", spacing: "md", contents: [
-            { type: "text", text: booking.booking_code, weight: "bold", size: "xl", color: "#315B4B", align: "center" },
+            { type: "text", text: booking.booking_code, weight: "bold", size: "xl", color: "#493943", align: "center" },
             detailRow("ผู้ปกครอง", customer.full_name),
             detailRow("เบอร์โทร", customer.phone),
             detailRow("เข้าพัก", formatDate(booking.check_in_at)),
             detailRow("รับกลับ", formatDate(booking.check_out_at)),
             { type: "separator", color: "#E8DEE5" },
-            { type: "box", layout: "vertical", paddingAll: "14px", cornerRadius: "md", backgroundColor: "#FFF1E8", contents: [
-              { type: "text", text: "ชำระวันเช็กอิน", size: "sm", color: "#A75A2E", align: "center" },
-              { type: "text", text: `${balance} บาท`, size: "xl", weight: "bold", color: "#A75A2E", margin: "xs", align: "center" }
+            { type: "box", layout: "vertical", paddingAll: "14px", cornerRadius: "md", backgroundColor: "#F9EDF4", contents: [
+              { type: "text", text: "ชำระวันเช็กอิน", size: "sm", color: "#493943", align: "center" },
+              { type: "text", text: `${balance} บาท`, size: "xl", weight: "bold", color: "#493943", margin: "xs", align: "center" }
             ] },
             { type: "text", text: "เก็บบิลนี้ไว้ และกดปุ่มด้านล่างเมื่อมาถึงโรงแรมในวันเช็กอิน", size: "sm", color: "#8B7B86", wrap: true }
           ] },
           footer: { type: "box", layout: "vertical", paddingAll: "16px", contents: [
-            { type: "button", style: "primary", color: "#315B4B", height: "sm", action: {
+            { type: "button", style: "primary", color: "#493943", height: "sm", action: {
               type: "postback", label: "ชำระวันเช็กอิน",
               data: `action=confirm_checkin_payment&booking_code=${encodeURIComponent(booking.booking_code)}`,
               displayText: `มาถึงแล้ว ยืนยันชำระยอดคงเหลือ ${booking.booking_code}`
