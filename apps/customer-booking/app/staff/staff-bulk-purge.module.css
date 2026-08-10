@@ -1,0 +1,30 @@
+.bulkButton {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid #ef9abb;
+  border-radius: 11px;
+  color: #9b315c;
+  background: #fff5f9;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.bulkButton:hover {
+  background: #ffe7f1;
+  box-shadow: 0 8px 18px rgba(155, 49, 92, 0.14);
+  transform: translateY(-1px);
+}
+
+.bulkButton:active {
+  box-shadow: none;
+  transform: translateY(1px) scale(0.98);
+}
+
+.bulkButton:focus-visible {
+  outline: 3px solid rgba(239, 154, 187, 0.32);
+  outline-offset: 2px;
+}

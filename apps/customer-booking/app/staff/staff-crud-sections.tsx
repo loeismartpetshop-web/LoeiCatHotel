@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { DashboardBooking, DashboardRoom } from "./staff-sections";
 import { StaffActionDialog } from "./staff-action-dialog";
+import { StaffBulkPurge } from "./staff-bulk-purge";
 import crud from "./staff-crud.module.css";
 import styles from "./staff-sections.module.css";
 
@@ -194,7 +195,13 @@ export function RoomsManager({ rooms, accessToken, onChanged, onError, canPurge 
 
   return (
     <section className={styles.contentPanel}>
-      <header><div><span>ROOM BOARD</span><h2>สถานะห้องพัก</h2><p>เพิ่ม แก้ไข หรือปิดใช้งานห้องได้จากหน้านี้</p></div><button className={crud.primaryAction} type="button" onClick={openNew}>＋ เพิ่มห้อง</button></header>
+      <header>
+        <div><span>ROOM BOARD</span><h2>สถานะห้องพัก</h2><p>เพิ่ม แก้ไข หรือปิดใช้งานห้องได้จากหน้านี้</p></div>
+        <div className={crud.headerActions}>
+          {canPurge && <StaffBulkPurge scope="rooms" title="ลบห้องทั้งหมด" description="ห้องทั้งหมดและการจัดห้องที่เชื่อมอยู่จะถูกลบถาวร รายการจองจะยังอยู่แต่จะไม่มีห้องที่จัดไว้ ข้อมูลกู้คืนไม่ได้" accessToken={accessToken} onChanged={onChanged} onError={onError} />}
+          <button className={crud.primaryAction} type="button" onClick={openNew}>＋ เพิ่มห้อง</button>
+        </div>
+      </header>
       {rooms.length ? (
         <div className={styles.roomGrid}>
           {rooms.map((room) => (
@@ -342,7 +349,15 @@ export function BookingsManager({ bookings, accessToken, onChanged, onError, can
 
   return (
     <section className={styles.contentPanel}>
-      <header className={styles.panelHeaderWithFilters}><div><span>BOOKING LIST</span><h2>รายการจอง</h2><p>{filtered.length} จาก {bookings.length} รายการ</p></div><div className={styles.filters}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหารหัส ชื่อ เบอร์โทร หรือชื่อแมว" /><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="active">กำลังดำเนินการ</option><option value="all">ทั้งหมด</option><option value="pending_deposit">รอตรวจมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option><option value="checked_in">กำลังเข้าพัก</option><option value="checked_out">รับกลับแล้ว</option><option value="cancelled">ยกเลิก</option></select><a className={crud.primaryAction} href="/" target="_blank" rel="noreferrer">＋ เพิ่มรายการจอง</a></div></header>
+      <header className={styles.panelHeaderWithFilters}>
+        <div><span>BOOKING LIST</span><h2>รายการจอง</h2><p>{filtered.length} จาก {bookings.length} รายการ</p></div>
+        <div className={styles.filters}>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหารหัส ชื่อ เบอร์โทร หรือชื่อแมว" />
+          <select value={status} onChange={(event) => setStatus(event.target.value)}><option value="active">กำลังดำเนินการ</option><option value="all">ทั้งหมด</option><option value="pending_deposit">รอตรวจมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option><option value="checked_in">กำลังเข้าพัก</option><option value="checked_out">รับกลับแล้ว</option><option value="cancelled">ยกเลิก</option></select>
+          {canPurge && <StaffBulkPurge scope="bookings" title="ลบรายการจองทั้งหมด" description="รายการจองทั้งหมดพร้อมการชำระเงิน ประวัติสถานะ การจัดห้อง ข้อความ และข้อมูลประกอบจะถูกลบถาวร ส่วนลูกค้า น้องแมว และห้องจะยังอยู่" accessToken={accessToken} onChanged={onChanged} onError={onError} />}
+          <a className={crud.primaryAction} href="/" target="_blank" rel="noreferrer">＋ เพิ่มรายการจอง</a>
+        </div>
+      </header>
       {filtered.length ? <div className={styles.bookingList}>{filtered.map((booking) => <article key={booking.bookingId}><header><div><span>รหัสการจอง</span><strong>{booking.bookingCode}</strong></div><i className={`${styles.bookingStatus} ${styles[`booking_${booking.status}`]}`}>{statusLabel(booking.status)}</i></header><div className={styles.bookingBody}><dl><div><dt>ผู้ปกครอง</dt><dd>{booking.customerName}</dd></div><div><dt>เบอร์โทร</dt><dd>{booking.phone}</dd></div><div><dt>น้องแมว</dt><dd>{booking.petNames.join(", ") || `${booking.totalPets} ตัว`}</dd></div><div><dt>ห้อง</dt><dd>{booking.roomNames.join(", ") || roomTypeLabel(booking.roomType)}</dd></div></dl><dl><div><dt>เข้าพัก</dt><dd>{formatDateTime(booking.checkInAt)}</dd></div><div><dt>รับกลับ</dt><dd>{formatDateTime(booking.checkOutAt)}</dd></div><div><dt>ค่าบริการรวม</dt><dd>{formatBaht(booking.totalAmount)}</dd></div><div><dt>มัดจำ / คงเหลือ</dt><dd>{formatBaht(booking.depositAmount)} / {formatBaht(booking.balanceAmount)}</dd></div></dl></div><footer className={crud.bookingActions}><button type="button" disabled={["cancelled", "expired"].includes(booking.status)} onClick={() => openEdit(booking)}>แก้ไขวันเวลา/สถานะ</button><button type="button" className={crud.dangerText} disabled={["cancelled", "checked_out"].includes(booking.status)} onClick={() => openBookingAction("cancel", booking)}>ยกเลิกรายการ</button>{canPurge && <button type="button" className={crud.purgeButton} onClick={() => openBookingAction("purge", booking)}>ลบถาวร (ทดสอบ)</button>}</footer></article>)}</div> : <div className={styles.sectionEmpty}><div>✓</div><h3>ไม่พบรายการจอง</h3><p>ลองเปลี่ยนคำค้นหรือสถานะ</p></div>}
 
       {editor && <div className={crud.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditor(null); }}><form className={crud.modal} onSubmit={saveBooking} role="dialog" aria-modal="true" aria-label="แก้ไขรายการจอง"><header><div><span>BOOKING EDIT</span><h3>{editor.bookingCode}</h3></div><button type="button" onClick={() => setEditor(null)} disabled={saving}>×</button></header><div className={crud.formGrid}><label><span>วันเวลาเข้าพัก</span><input type="datetime-local" value={editor.checkInAt} onChange={(event) => setEditor({ ...editor, checkInAt: event.target.value })} required /></label><label><span>วันเวลารับกลับ</span><input type="datetime-local" value={editor.checkOutAt} onChange={(event) => setEditor({ ...editor, checkOutAt: event.target.value })} required /></label><label className={crud.fullField}><span>สถานะรายการจอง</span><select value={editor.status} onChange={(event) => setEditor({ ...editor, status: event.target.value })}><option value="draft">แบบร่าง</option><option value="held">ล็อกห้องชั่วคราว</option><option value="pending_deposit">รอตรวจมัดจำ</option><option value="confirmed">ยืนยันแล้ว</option><option value="checked_in">กำลังเข้าพัก</option><option value="checked_out">รับกลับแล้ว</option><option value="cancellation_review">ตรวจสอบยกเลิก</option></select></label></div><div className={crud.notice}>การแก้ไขวันเวลาจะปรับช่วงเวลาของห้องที่จัดไว้ให้ตรงกัน และทุกการเปลี่ยนแปลงจะถูกบันทึกใน Audit Log</div><footer><button type="button" onClick={() => setEditor(null)} disabled={saving}>ยกเลิก</button><button type="submit" className={crud.saveButton} disabled={saving}>{saving ? "กำลังบันทึก..." : "บันทึกรายการจอง"}</button></footer></form></div>}

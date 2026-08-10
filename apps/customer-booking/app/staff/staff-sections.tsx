@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { StaffActionDialog } from "./staff-action-dialog";
+import { StaffBulkPurge } from "./staff-bulk-purge";
 import styles from "./staff-sections.module.css";
 
 export type DashboardSection = "overview" | "rooms" | "bookings" | "payments" | "customers";
@@ -289,7 +290,13 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
 
   return (
     <section className={styles.contentPanel}>
-      <header className={styles.panelHeaderWithFilters}><div><span>CUSTOMER & PET</span><h2>ลูกค้าและน้องแมว</h2><p>{filtered.length} จาก {customers.length} ครอบครัว</p></div><div className={styles.filters}><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร LINE หรือชื่อแมว" /></div></header>
+      <header className={styles.panelHeaderWithFilters}>
+        <div><span>CUSTOMER & PET</span><h2>ลูกค้าและน้องแมว</h2><p>{filtered.length} จาก {customers.length} ครอบครัว</p></div>
+        <div className={styles.filters}>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร LINE หรือชื่อแมว" />
+          {canPurge && <StaffBulkPurge scope="customers" title="ลบลูกค้าและน้องแมวทั้งหมด" description="ลูกค้าและน้องแมวทั้งหมด รวมถึงรายการจอง การชำระเงิน และข้อมูลที่เชื่อมโยงทั้งหมดจะถูกลบถาวร ห้องพักจะยังอยู่ ข้อมูลกู้คืนไม่ได้" accessToken={accessToken} onChanged={onChanged} onError={onError} />}
+        </div>
+      </header>
       {filtered.length ? (
         <div className={styles.customerList}>
           {filtered.map((customer) => (

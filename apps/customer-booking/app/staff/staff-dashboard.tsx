@@ -6,6 +6,7 @@ import type { FormEvent } from "react";
 import { CustomersSection, OverviewSection } from "./staff-sections";
 import { BookingsManager, RoomsManager } from "./staff-crud-sections";
 import { StaffActionDialog } from "./staff-action-dialog";
+import { StaffBulkPurge } from "./staff-bulk-purge";
 import type { DashboardSection, StaffDashboardData } from "./staff-sections";
 import extraStyles from "./staff-dashboard-extras.module.css";
 import styles from "./staff.module.css";
@@ -314,7 +315,13 @@ export function StaffDashboard() {
             </section>
 
             <section className={styles.reviewPanel}>
-              <header><div><span>DEPOSIT QUEUE</span><h2>รายการมัดจำรอตรวจ</h2></div><a href="https://manager.line.biz/" target="_blank" rel="noreferrer">เปิด LINE OA Manager ↗</a></header>
+              <header>
+                <div><span>DEPOSIT QUEUE</span><h2>รายการมัดจำรอตรวจ</h2></div>
+                <div className={styles.reviewHeaderActions}>
+                  {staff?.role === "owner" && <StaffBulkPurge scope="payments" title="ลบประวัติการชำระเงินทั้งหมด" description="รายการชำระเงินและคำขอคืนเงินทั้งหมดจะถูกลบถาวร แต่ยอดราคาในรายการจอง ลูกค้า น้องแมว และห้องจะยังอยู่" accessToken={accessToken} onChanged={handleDashboardChanged} onError={setError} />}
+                  <a href="https://manager.line.biz/" target="_blank" rel="noreferrer">เปิด LINE OA Manager ↗</a>
+                </div>
+              </header>
               {pendingDeposits.length === 0 ? (
                 <div className={styles.emptyState}><div>✓</div><h3>ไม่มีสลิปรอตรวจ</h3><p>รายการใหม่จะขึ้นหลังลูกค้าส่งสลิปและกดยืนยันมัดจำใน LINE</p></div>
               ) : (

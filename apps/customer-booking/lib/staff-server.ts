@@ -1,9 +1,13 @@
 import "server-only";
 
-interface AuthUser { id?: string }
+interface AuthUser {
+  id?: string;
+  email?: string;
+}
 
 export interface StaffSession {
   userId: string;
+  email: string;
   fullName: string;
   role: string;
 }
@@ -49,7 +53,7 @@ export async function requireStaffSession(request: Request): Promise<StaffSessio
   if (!userResponse.ok) throw new Response("unauthorized", { status: 401 });
 
   const user = await userResponse.json() as AuthUser;
-  if (!user.id) throw new Response("unauthorized", { status: 401 });
+  if (!user.id || !user.email) throw new Response("unauthorized", { status: 401 });
   const staff = await staffAdminRequest<Array<{
     auth_user_id: string;
     full_name: string;
@@ -59,7 +63,22 @@ export async function requireStaffSession(request: Request): Promise<StaffSessio
   if (!staff[0] || !["owner", "front_desk"].includes(staff[0].role)) {
     throw new Response("forbidden", { status: 403 });
   }
-  return { userId: user.id, fullName: staff[0].full_name, role: staff[0].role };
+  return { userId: user.id, email: user.email, fullName: staff[0].full_name, role: staff[0].role };
+}
+
+export async function verifyStaffPassword(email: string, password: string): Promise<boolean> {
+  if (!email || !password) return false;
+  const { url, publishable } = getStaffConfig();
+  const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: publishable,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email, password })
+  });
+  return response.ok;
 }
 
 export async function writeAudit(input: {

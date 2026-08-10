@@ -11,6 +11,10 @@ interface StaffActionDialogProps {
   busy: boolean;
   tone?: "primary" | "danger";
   requiredCode?: string | undefined;
+  requireConfirmation?: boolean;
+  confirmationLabel?: string;
+  confirmationPlaceholder?: string;
+  confirmationType?: "text" | "password";
   confirmation?: string;
   error?: string;
   onConfirmationChange?: (value: string) => void;
@@ -27,14 +31,19 @@ export function StaffActionDialog({
   busy,
   tone = "primary",
   requiredCode,
+  requireConfirmation = false,
+  confirmationLabel,
+  confirmationPlaceholder,
+  confirmationType = "text",
   confirmation = "",
   error = "",
   onConfirmationChange,
   onCancel,
   onConfirm
 }: StaffActionDialogProps) {
-  const codeMatches = !requiredCode
-    || confirmation.trim().toUpperCase() === requiredCode.toUpperCase();
+  const codeMatches = requiredCode
+    ? confirmation.trim().toUpperCase() === requiredCode.toUpperCase()
+    : requireConfirmation ? confirmation.trim().length > 0 : true;
 
   return (
     <div
@@ -67,18 +76,19 @@ export function StaffActionDialog({
 
         <div className={dialogStyles.body}>
           <p id="staff-action-description">{description}</p>
-          {requiredCode && (
+          {(requiredCode || requireConfirmation) && (
             <label>
-              <span>พิมพ์รหัส <strong>{requiredCode}</strong> เพื่อยืนยัน</span>
+              <span>{confirmationLabel ?? (requiredCode ? <>พิมพ์รหัส <strong>{requiredCode}</strong> เพื่อยืนยัน</> : "กรอกข้อมูลเพื่อยืนยัน")}</span>
               <input
                 autoFocus
+                type={confirmationType}
                 value={confirmation}
                 onChange={(event) => onConfirmationChange?.(event.target.value)}
-                placeholder={requiredCode}
-                autoComplete="off"
+                placeholder={confirmationPlaceholder ?? requiredCode ?? ""}
+                autoComplete={confirmationType === "password" ? "current-password" : "off"}
                 disabled={busy}
               />
-              {confirmation && !codeMatches && <small>รหัสยังไม่ตรง กรุณาตรวจอีกครั้ง</small>}
+              {requiredCode && confirmation && !codeMatches && <small>รหัสยังไม่ตรง กรุณาตรวจอีกครั้ง</small>}
             </label>
           )}
           {error && <div className={dialogStyles.error} role="alert">{error}</div>}
