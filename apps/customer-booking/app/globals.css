@@ -605,3 +605,80 @@ button { color: inherit; }
   background: var(--brand-strong, #b04f82);
   color: #fff;
 }
+
+/* ── รูปน้องแมวในขั้นตอนกรอกข้อมูล ─────────────────────── */
+
+.pet-photo-hint {
+  margin: 0 0 10px;
+  color: var(--muted-ink, #7c6672);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pet-name-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.pet-name-row .field-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pet-photo-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.pet-photo-frame {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  border: 1px dashed #e6c3d7;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.pet-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pet-photo-button {
+  cursor: pointer;
+}
+
+.pet-photo-button span {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #e6c3d7;
+  background: #fff;
+  color: var(--brand-strong, #b04f82);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.pet-photo-button:hover span {
+  background: #fdf2f8;
+}
+
+.pet-photo-clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #b4413f;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+}

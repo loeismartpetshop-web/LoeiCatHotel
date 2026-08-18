@@ -266,11 +266,19 @@ export async function GET(request: Request) {
       };
     });
 
+    const petPhotoUrls = await signPetPhotos(pets.map((pet) => pet.photo_path ?? ""));
+
     const dashboardBookings = bookings.map((booking) => {
       const customer = customerById.get(booking.customer_id);
-      const bookingPetNames = (petIdsByBooking.get(booking.booking_id) ?? [])
-        .map((petId) => petById.get(petId)?.pet_name)
-        .filter((name): name is string => Boolean(name));
+      const bookingPets = (petIdsByBooking.get(booking.booking_id) ?? [])
+        .map((petId) => petById.get(petId))
+        .filter((pet): pet is PetRow => Boolean(pet))
+        .map((pet) => ({
+          petId: pet.pet_id,
+          petName: pet.pet_name,
+          photoUrl: pet.photo_path ? petPhotoUrls.get(pet.photo_path) ?? null : null
+        }));
+      const bookingPetNames = bookingPets.map((pet) => pet.petName);
       const roomNames = allocations
         .filter((allocation) => allocation.booking_id === booking.booking_id && allocation.status === "active")
         .map((allocation) => rooms.find((room) => room.room_id === allocation.room_id)?.display_name)
@@ -283,6 +291,7 @@ export async function GET(request: Request) {
         customerName: customer?.full_name ?? "ไม่พบชื่อลูกค้า",
         phone: customer?.phone ?? "–",
         petNames: bookingPetNames,
+        pets: bookingPets,
         totalPets: booking.total_pets,
         roomType: roomTypeFromNotes(booking.customer_notes),
         roomNames,
@@ -294,8 +303,6 @@ export async function GET(request: Request) {
         createdAt: booking.created_at
       };
     });
-
-    const petPhotoUrls = await signPetPhotos(pets.map((pet) => pet.photo_path ?? ""));
 
     const dashboardCustomers = customers.map((customer) => {
       const customerPets = pets.filter((pet) => pet.customer_id === customer.customer_id);

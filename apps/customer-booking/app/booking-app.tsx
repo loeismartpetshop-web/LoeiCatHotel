@@ -40,6 +40,7 @@ interface BookingForm {
   phone: string;
   miHomeAppId: string;
   petNames: string[];
+  petPhotos: string[];
   clinicName: string;
   clinicPhone: string;
   emergencyConsent: boolean;
@@ -61,6 +62,7 @@ const initialForm: BookingForm = {
   phone: "",
   miHomeAppId: "",
   petNames: ["", ""],
+  petPhotos: ["", ""],
   clinicName: "",
   clinicPhone: "",
   emergencyConsent: false,
@@ -81,6 +83,35 @@ const careOptions = [
   { value: "shy", label: "ขี้กลัว ต้องให้เวลาปรับตัว" },
   { value: "none", label: "ไม่มีการดูแลพิเศษ" }
 ];
+
+const PET_PHOTO_MAX_EDGE = 1024;
+const PET_PHOTO_QUALITY = 0.75;
+
+// แปลงรูปที่ลูกค้าเลือก (JPG/JPEG/PNG/HEIC ที่เบราว์เซอร์อ่านได้) เป็น WebP เพื่อลดขนาดก่อนส่งขึ้นเซิร์ฟเวอร์
+// ถ้าเบราว์เซอร์เก่าไม่รองรับการเข้ารหัส WebP จะ fallback เป็น JPEG ให้อัตโนมัติ
+async function toWebpDataUrl(file: File): Promise<string> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("อ่านไฟล์รูปไม่สำเร็จ"));
+      element.src = objectUrl;
+    });
+    const scale = Math.min(1, PET_PHOTO_MAX_EDGE / Math.max(image.width, image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("เบราว์เซอร์นี้แปลงรูปไม่ได้");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const webp = canvas.toDataURL("image/webp", PET_PHOTO_QUALITY);
+    if (webp.startsWith("data:image/webp")) return webp;
+    return canvas.toDataURL("image/jpeg", PET_PHOTO_QUALITY);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 function formatBaht(value: number, locale: Locale): string {
   return `${value.toLocaleString(dateLocaleTag(locale))} ${translate("บาท", locale)}`;
@@ -245,10 +276,11 @@ export function BookingApp() {
     const count = Math.min(HOTEL_MAXIMUM_PETS, Math.max(1, nextCount));
     setForm((current) => {
       const petNames = Array.from({ length: count }, (_, index) => current.petNames[index] ?? "");
+      const petPhotos = Array.from({ length: count }, (_, index) => current.petPhotos[index] ?? "");
       let roomType = current.roomType;
       if (count === 1) roomType = "villa";
       if (count > 2) roomType = "condo";
-      return { ...current, petCount: count, petNames, roomType };
+      return { ...current, petCount: count, petNames, petPhotos, roomType };
     });
     setError("");
   };
@@ -363,6 +395,29 @@ export function BookingApp() {
     setStep((current) => Math.max(1, current - 1) as Step);
     setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const setPetPhoto = async (index: number, file: File | null) => {
+    if (!file) return;
+    try {
+      const dataUrl = await toWebpDataUrl(file);
+      setForm((current) => {
+        const petPhotos = [...current.petPhotos];
+        petPhotos[index] = dataUrl;
+        return { ...current, petPhotos };
+      });
+      setError("");
+    } catch {
+      setError(t("แปลงรูปน้องแมวไม่สำเร็จ กรุณาเลือกไฟล์รูปอื่น"));
+    }
+  };
+
+  const clearPetPhoto = (index: number) => {
+    setForm((current) => {
+      const petPhotos = [...current.petPhotos];
+      petPhotos[index] = "";
+      return { ...current, petPhotos };
+    });
   };
 
   const toggleCareFlag = (value: string) => {
@@ -531,9 +586,24 @@ export function BookingApp() {
 
                   <div className="pet-name-card">
                     <div className="field-title-row"><span className="field-title">{t("ชื่อแมวทุกตัว *")}</span><small>{form.petCount} {t("ตัว")}</small></div>
+                    <p className="pet-photo-hint">{t("แนบรูปน้องได้ 1 รูปต่อตัว ช่วยให้พนักงานจำน้องได้ถูกตัว และใช้ช่วยประกาศตามหาหากน้องหาย (ไม่บังคับ)")}</p>
                     <div className="pet-name-grid">
                       {form.petNames.map((name, index) => (
-                        <label className="field-label" key={index}><span>{t("ตัวที่")} {index + 1}</span><input value={name} placeholder={`${t("ชื่อน้องแมวตัวที่")} ${index + 1}`} onChange={(event) => { const petNames = [...form.petNames]; petNames[index] = event.target.value; updateForm("petNames", petNames); }} /></label>
+                        <div className="pet-name-row" key={index}>
+                          <label className="field-label"><span>{t("ตัวที่")} {index + 1}</span><input value={name} placeholder={`${t("ชื่อน้องแมวตัวที่")} ${index + 1}`} onChange={(event) => { const petNames = [...form.petNames]; petNames[index] = event.target.value; updateForm("petNames", petNames); }} /></label>
+                          <div className="pet-photo-picker">
+                            <div className="pet-photo-frame">
+                              {form.petPhotos[index]
+                                ? <img src={form.petPhotos[index]} alt={`${t("รูปของ")} ${name || `${t("ตัวที่")} ${index + 1}`}`} />
+                                : <span aria-hidden="true">🐾</span>}
+                            </div>
+                            <label className="pet-photo-button">
+                              <span>{form.petPhotos[index] ? t("เปลี่ยนรูป") : t("เพิ่มรูปน้อง")}</span>
+                              <input type="file" accept="image/*" hidden onChange={(event) => { void setPetPhoto(index, event.target.files?.[0] ?? null); event.target.value = ""; }} />
+                            </label>
+                            {form.petPhotos[index] && <button type="button" className="pet-photo-clear" onClick={() => clearPetPhoto(index)}>{t("ลบรูป")}</button>}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>

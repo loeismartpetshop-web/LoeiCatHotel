@@ -233,7 +233,14 @@ const EN: Record<string, string> = {
   "100 บาท": "THB 100",
   "ภายในวันเดียวกัน": "Same day",
   "ยังไม่ได้เลือกวัน": "No date selected",
-  "เลือกภาษา": "Choose language"
+  "เลือกภาษา": "Choose language",
+  "เพิ่มรูปน้อง": "Add photo",
+  "เปลี่ยนรูป": "Change photo",
+  "ลบรูป": "Remove photo",
+  "รูปของ": "Photo of",
+  "แปลงรูปน้องแมวไม่สำเร็จ กรุณาเลือกไฟล์รูปอื่น": "Could not process that image. Please pick another file.",
+  "แนบรูปน้องได้ 1 รูปต่อตัว ช่วยให้พนักงานจำน้องได้ถูกตัว และใช้ช่วยประกาศตามหาหากน้องหาย (ไม่บังคับ)":
+    "You can attach one photo per cat. It helps our staff recognise your cat and can be used in a lost-cat notice (optional)."
 };
 
 const DICTIONARIES: Record<Locale, Record<string, string>> = { th: {}, en: EN };

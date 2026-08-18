@@ -32,6 +32,7 @@ export interface DashboardBooking {
   customerName: string;
   phone: string;
   petNames: string[];
+  pets: Array<{ petId: string; petName: string; photoUrl: string | null }>;
   totalPets: number;
   roomType: string | null;
   roomNames: string[];
@@ -217,6 +218,18 @@ export function BookingsSection({ bookings }: { bookings: DashboardBooking[] }) 
               <header><div><span>รหัสการจอง</span><strong>{booking.bookingCode}</strong></div><i className={`${styles.bookingStatus} ${styles[`booking_${booking.status}`]}`}>{statusLabel(booking.status)}</i></header>
               <div className={styles.bookingBody}>
                 <dl><div><dt>ผู้ปกครอง</dt><dd>{booking.customerName}</dd></div><div><dt>เบอร์โทร</dt><dd>{booking.phone}</dd></div><div><dt>น้องแมว</dt><dd>{booking.petNames.join(", ") || `${booking.totalPets} ตัว`}</dd></div><div><dt>ห้อง</dt><dd>{booking.roomNames.join(", ") || roomTypeLabel(booking.roomType)}</dd></div></dl>
+                {booking.pets.length > 0 && (
+                  <div className={styles.bookingPetPhotos}>
+                    {booking.pets.map((pet) => (
+                      <figure key={pet.petId}>
+                        {pet.photoUrl
+                          ? <img src={pet.photoUrl} alt={`รูปของ ${pet.petName}`} loading="lazy" />
+                          : <span aria-hidden="true">{pet.petName.trim().charAt(0) || "?"}</span>}
+                        <figcaption>{pet.petName}</figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                )}
                 <dl><div><dt>เข้าพัก</dt><dd>{formatDateTime(booking.checkInAt)}</dd></div><div><dt>รับกลับ</dt><dd>{formatDateTime(booking.checkOutAt)}</dd></div><div><dt>ค่าบริการรวม</dt><dd>{formatBaht(booking.totalAmount)}</dd></div><div><dt>มัดจำ / คงเหลือ</dt><dd>{formatBaht(booking.depositAmount)} / {formatBaht(booking.balanceAmount)}</dd></div></dl>
               </div>
             </article>

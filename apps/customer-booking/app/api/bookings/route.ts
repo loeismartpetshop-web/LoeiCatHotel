@@ -22,6 +22,7 @@ interface BookingRequest {
   phone: string;
   miHomeAppId?: string;
   petNames: string[];
+  petPhotos?: string[];
   clinicName?: string;
   clinicPhone?: string;
   emergencyConsent: boolean;
@@ -274,6 +275,55 @@ async function removeRows(table: string, column: string, ids: string[]): Promise
   }
 }
 
+const PET_PHOTO_MAX_BYTES = 2 * 1024 * 1024;
+const PET_PHOTO_MIME_EXTENSIONS: Record<string, string> = {
+  "image/webp": "webp",
+  "image/jpeg": "jpg",
+  "image/png": "png"
+};
+
+interface PetPhotoUpload {
+  contentType: string;
+  extension: string;
+  bytes: Buffer;
+}
+
+// รูปน้องแมวส่งมาเป็น data URL จากหน้าจอง (แปลงเป็น WebP ในเครื่องลูกค้าแล้ว)
+// ตรวจชนิดไฟล์และขนาดที่นี่อีกชั้น เพราะ client ปลอมค่าได้
+function sanitizePetPhoto(value: unknown): PetPhotoUpload | null {
+  if (typeof value !== "string" || !value.startsWith("data:image/")) return null;
+  const match = value.match(/^data:(image\/[a-z+]+);base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) return null;
+  const contentType = match[1]!;
+  const extension = PET_PHOTO_MIME_EXTENSIONS[contentType];
+  if (!extension) return null;
+  const bytes = Buffer.from(match[2]!, "base64");
+  if (!bytes.byteLength || bytes.byteLength > PET_PHOTO_MAX_BYTES) return null;
+  return { contentType, extension, bytes };
+}
+
+async function savePetPhoto(petId: string, photo: PetPhotoUpload): Promise<void> {
+  const { url, key } = getSupabaseConfig();
+  const objectPath = `${petId}/${Date.now()}.${photo.extension}`;
+  const upload = await fetch(`${url}/storage/v1/object/pet-photos/${objectPath}`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": photo.contentType,
+      "x-upsert": "true"
+    },
+    body: new Uint8Array(photo.bytes)
+  });
+  if (!upload.ok) throw new Error(`Storage ${upload.status}: ${(await upload.text()).slice(0, 200)}`);
+  await supabaseRequest(`pets?pet_id=eq.${encodeURIComponent(petId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ photo_path: objectPath, photo_updated_at: new Date().toISOString() })
+  });
+}
+
 function validateRequest(input: BookingRequest) {
   if (!input || typeof input !== "object") throw new PublicError("ข้อมูลคำขอไม่ถูกต้อง");
   const idempotencyKey = requireText(input.idempotencyKey, "รหัสคำขอ", 128);
@@ -290,6 +340,9 @@ function validateRequest(input: BookingRequest) {
     throw new PublicError("ข้อมูลชื่อแมวไม่ครบ");
   }
   const petNames = input.petNames.map((name) => requireText(name, "ชื่อแมว", 80));
+  const petPhotos = Array.isArray(input.petPhotos)
+    ? petNames.map((_, index) => sanitizePetPhoto(input.petPhotos?.[index]))
+    : petNames.map(() => null);
   if (input.roomType !== "villa" && input.roomType !== "condo") throw new PublicError("ประเภทห้องไม่ถูกต้อง");
   if (input.mode !== "overnight" && input.mode !== "hourly") throw new PublicError("รูปแบบการเข้าพักไม่ถูกต้อง");
   if (!input.termsAccepted) throw new PublicError("กรุณายินยอมให้จัดเก็บข้อมูลเพื่อดำเนินคำขอจอง");
@@ -334,6 +387,7 @@ function validateRequest(input: BookingRequest) {
     phone,
     miHomeAppId,
     petNames,
+    petPhotos,
     roomType: input.roomType,
     checkInAt,
     checkOutAt,
@@ -424,6 +478,17 @@ export async function POST(request: Request) {
     });
     if (pets.length !== input.petNames.length) throw new Error("Pet insert count mismatch");
     created.petIds = pets.map((pet) => pet.pet_id);
+
+    // รูปน้องแมวเป็นข้อมูลเสริม ถ้าอัปโหลดไม่สำเร็จต้องไม่ทำให้การจองล้ม
+    await Promise.all(pets.map(async (pet, index) => {
+      const photo = input.petPhotos[index];
+      if (!photo) return;
+      try {
+        await savePetPhoto(pet.pet_id, photo);
+      } catch (photoError) {
+        console.warn("Unable to save pet photo", pet.pet_id, photoError);
+      }
+    }));
 
     const bookingCode = createBookingCode();
     const bookings = await supabaseRequest<BookingRow[]>("bookings", {
