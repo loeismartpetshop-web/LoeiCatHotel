@@ -45,6 +45,8 @@ interface PetRow {
   sex: string | null;
   breed: string | null;
   age_text: string | null;
+  photo_path: string | null;
+  photo_updated_at: string | null;
 }
 interface BookingPetRow { booking_id: string; pet_id: string }
 interface AllocationRow {
@@ -102,6 +104,55 @@ async function loadCustomers(): Promise<CustomerRow[]> {
     return customers.map((customer) => ({ ...customer, mihome_app_id: null }));
   }
 }
+function isMissingPetPhotoColumn(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("photo_path") && /PGRST204|schema cache|does not exist/i.test(message);
+}
+
+async function loadPets(): Promise<PetRow[]> {
+  try {
+    return await adminRequest<PetRow[]>(
+      "pets?select=pet_id,customer_id,pet_name,sex,breed,age_text,photo_path,photo_updated_at&deleted_at=is.null&order=created_at.desc&limit=1000"
+    );
+  } catch (error) {
+    if (!isMissingPetPhotoColumn(error)) throw error;
+    const pets = await adminRequest<Array<Omit<PetRow, "photo_path" | "photo_updated_at">>>(
+      "pets?select=pet_id,customer_id,pet_name,sex,breed,age_text&deleted_at=is.null&order=created_at.desc&limit=1000"
+    );
+    return pets.map((pet) => ({ ...pet, photo_path: null, photo_updated_at: null }));
+  }
+}
+
+// รูปน้องแมวอยู่ใน private bucket จึงต้องแปลงเป็น signed URL อายุสั้นก่อนส่งให้หน้าเว็บ
+async function signPetPhotos(paths: string[]): Promise<Map<string, string>> {
+  const signed = new Map<string, string>();
+  const unique = Array.from(new Set(paths.filter(Boolean)));
+  if (!unique.length) return signed;
+  try {
+    const { url, secret } = getConfig();
+    const response = await fetch(`${url}/storage/v1/object/sign/pet-photos`, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        apikey: secret,
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ expiresIn: 900, paths: unique })
+    });
+    if (!response.ok) return signed;
+    const rows = await response.json() as Array<{ path?: string; signedURL?: string; error?: string | null }>;
+    for (const row of rows) {
+      if (row.path && row.signedURL && !row.error) {
+        signed.set(row.path, `${url}/storage/v1${row.signedURL}`);
+      }
+    }
+  } catch {
+    // ถ้าเซ็น URL ไม่สำเร็จให้แดชบอร์ดยังใช้งานได้ตามปกติ เพียงแต่ไม่มีรูป
+  }
+  return signed;
+}
+
 async function requireStaff(request: Request): Promise<StaffRow> {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token) throw new Response("unauthorized", { status: 401 });
@@ -156,9 +207,7 @@ export async function GET(request: Request) {
         "bookings?select=booking_id,booking_code,customer_id,status,source,check_in_at,check_out_at,total_pets,total_amount,deposit_amount,balance_amount,customer_notes,created_at&order=created_at.desc&limit=300"
       ),
       loadCustomers(),
-      adminRequest<PetRow[]>(
-        "pets?select=pet_id,customer_id,pet_name,sex,breed,age_text&deleted_at=is.null&order=created_at.desc&limit=1000"
-      ),
+      loadPets(),
       adminRequest<BookingPetRow[]>("booking_pets?select=booking_id,pet_id&limit=2000"),
       adminRequest<AllocationRow[]>(
         "booking_room_allocations?select=booking_room_allocation_id,booking_id,room_id,allocated_from,allocated_until,pet_count,status&order=allocated_from.asc&limit=2000"
@@ -246,6 +295,8 @@ export async function GET(request: Request) {
       };
     });
 
+    const petPhotoUrls = await signPetPhotos(pets.map((pet) => pet.photo_path ?? ""));
+
     const dashboardCustomers = customers.map((customer) => {
       const customerPets = pets.filter((pet) => pet.customer_id === customer.customer_id);
       const customerBookings = bookings.filter((booking) => booking.customer_id === customer.customer_id);
@@ -262,7 +313,9 @@ export async function GET(request: Request) {
           petName: pet.pet_name,
           sex: pet.sex,
           breed: pet.breed,
-          ageText: pet.age_text
+          ageText: pet.age_text,
+          photoUrl: pet.photo_path ? petPhotoUrls.get(pet.photo_path) ?? null : null,
+          photoUpdatedAt: pet.photo_updated_at
         })),
         bookingCount: customerBookings.length,
         latestBookingAt: customerBookings[0]?.created_at ?? null,

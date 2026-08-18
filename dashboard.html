@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOEI CAT HOTEL — Staff Dashboard</title>
+  <style>
+    :root{--ink:#26352f;--muted:#6f7c76;--cream:#f7f3eb;--paper:#fffdfa;--green:#496a5a;--green2:#dce8df;--orange:#d7834f;--red:#b85e57;--line:#e5ded2;--shadow:0 12px 34px rgba(48,58,53,.09)}
+    *{box-sizing:border-box} body{margin:0;background:var(--cream);color:var(--ink);font-family:"Noto Sans Thai",Tahoma,Arial,sans-serif} button,input,select{font:inherit}
+    .shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}.sidebar{background:var(--ink);color:#fff;padding:28px 20px;position:sticky;top:0;height:100vh}.brand{font-weight:900;font-size:21px}.brand small{display:block;font-size:12px;font-weight:500;color:#c8d2cc;margin-top:4px}.nav{margin-top:34px;display:grid;gap:8px}.nav button{border:0;background:transparent;color:#d8e0db;text-align:left;padding:12px 14px;border-radius:12px;cursor:pointer}.nav button.active,.nav button:hover{background:#3a4d45;color:#fff}.sidebar-foot{position:absolute;bottom:24px;left:20px;right:20px;font-size:12px;color:#bdc9c2}.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#86bd91;margin-right:6px}
+    main{padding:28px 34px 50px;min-width:0}.topbar{display:flex;justify-content:space-between;gap:20px;align-items:center}.eyebrow{color:var(--orange);font-size:12px;font-weight:800;letter-spacing:.08em}.topbar h1{margin:4px 0 0;font-size:28px}.top-actions{display:flex;gap:10px}.role-select{border:1px solid var(--line);background:var(--paper);padding:10px 12px;border-radius:12px;color:var(--ink);font-weight:700}.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700}.btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn:hover{transform:translateY(-1px)}
+    .notice{margin-top:22px;background:#f3e4d7;border:1px solid #e7cab3;border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;gap:16px}.notice strong{color:#8c4f2e}.notice button{border:0;background:transparent;color:#8c4f2e;font-weight:800;cursor:pointer}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}.stat{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}.stat .label{color:var(--muted);font-size:13px}.stat .value{font-size:29px;font-weight:900;margin-top:7px}.stat .hint{font-size:12px;color:var(--green);margin-top:4px}.stat.warning .hint{color:var(--red)}
+    .grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(310px,.75fr);gap:18px}.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}.card-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}.card-head h2{font-size:17px;margin:0}.card-body{padding:18px 20px}.date-tabs{display:flex;gap:6px}.date-tabs button{border:0;background:#f0ede6;padding:7px 10px;border-radius:9px;cursor:pointer;font-size:12px}.date-tabs button.active{background:var(--green2);color:var(--green);font-weight:800}
+    .rooms{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.room{border:1px solid var(--line);border-radius:14px;padding:12px;min-height:92px;background:#fff}.room strong{display:block;font-size:13px}.room span{font-size:11px;color:var(--muted)}.room .cats{margin-top:12px;font-size:13px;color:var(--ink);font-weight:700}.room.occupied{border-color:#aac4b2;background:#eef5f0}.room.checkout{border-color:#e0b293;background:#fff4eb}.room.blocked{background:#f2efea;color:#8b857c}.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:15px;font-size:11px;color:var(--muted)}.legend i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px}
+    .tasks{display:grid;gap:10px}.task{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px dashed var(--line)}.task:last-child{border:0}.time{font-size:12px;font-weight:900;color:var(--green);min-width:42px}.task p{margin:0;font-size:13px}.task small{color:var(--muted)}.quick-actions{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.quick-action{min-height:76px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;font-weight:800;color:var(--ink);padding:10px 6px}.quick-action b{display:block;font-size:21px;margin-bottom:5px}.quick-action.done{background:var(--green2);border-color:#91b09c;color:var(--green)}.quick-action.help{background:#fff2e9;color:#9b582f;border-color:#edc4a8}
+    .table-card{margin-top:18px}.filters{display:flex;gap:9px}.search{border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:#fff;min-width:220px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--line);font-size:13px}th{font-size:11px;color:var(--muted);background:#faf8f3}.badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:800;background:var(--green2);color:var(--green)}.badge.orange{background:#f7e2d4;color:#9b582f}.badge.red{background:#f4deda;color:#984943}.actions{display:flex;gap:6px}.mini{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;cursor:pointer;font-size:11px}.mini.print{color:var(--green);border-color:#b8cabf}
+    .page{display:none}.page.active{display:block}.empty-page{padding:60px 20px;text-align:center;color:var(--muted)}
+    @media(max-width:1050px){.shell{grid-template-columns:78px 1fr}.sidebar{padding:24px 12px}.brand{font-size:0}.brand:before{content:"LCH";font-size:18px}.brand small,.nav button span,.sidebar-foot{display:none}.nav button{text-align:center;padding:12px 5px}.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.rooms{grid-template-columns:repeat(4,1fr)}}
+    @media(max-width:700px){.shell{display:block}.sidebar{height:auto;position:static;padding:14px 16px}.brand:before{content:none}.brand{font-size:17px}.brand small{display:block}.nav{margin:12px 0 0;display:flex;overflow:auto}.nav button{white-space:nowrap;padding:8px 10px}.nav button span{display:inline}.sidebar-foot{display:none}main{padding:20px 14px}.topbar{align-items:flex-start}.top-actions{display:grid}.top-actions .btn:first-of-type{display:none}.stats{grid-template-columns:1fr 1fr}.rooms{grid-template-columns:repeat(2,1fr)}.quick-actions{grid-template-columns:repeat(3,1fr)}.card-head{align-items:flex-start;gap:10px}.table-wrap{overflow:auto}th,td{white-space:nowrap}.notice{display:block}.notice button{margin-top:8px}}
+    @media print{.sidebar,.topbar,.notice{display:none}main{padding:0}.shell{display:block}.card,.stat{box-shadow:none}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">LOEI CAT HOTEL<small>ระบบจัดการโรงแรมแมว</small></div>
+    <nav class="nav" aria-label="เมนูหลัก">
+      <button class="active" data-page="overview">⌂ <span>ภาพรวมวันนี้</span></button>
+      <button data-page="rooms">▦ <span>ตารางห้อง</span></button>
+      <button data-page="bookings">≡ <span>รายการจอง</span></button>
+      <button data-page="payments">฿ <span>การชำระเงิน</span></button>
+      <button data-page="customers">♙ <span>ลูกค้าและแมว</span></button>
+      <button data-page="settings">⚙ <span>ตั้งค่าระบบ</span></button>
+    </nav>
+    <div class="sidebar-foot"><span class="status-dot"></span>ระบบจำลองพร้อมใช้งาน<br>Staff 01 • 30 ก.ค. 2569</div>
+  </aside>
+
+  <main>
+    <section id="overview" class="page active">
+      <div class="topbar">
+        <div><div class="eyebrow">พฤหัสบดี 30 กรกฎาคม 2569</div><h1>สวัสดีค่ะ วันนี้มีอะไรบ้าง</h1></div>
+        <div class="top-actions"><select class="role-select" id="roleSelect" aria-label="เลือกตำแหน่งผู้ใช้งาน"><option value="frontdesk">หน้าร้าน</option><option value="caregiver">พี่เลี้ยงแมว</option><option value="housekeeper">แม่บ้าน</option><option value="owner">Owner</option></select><button class="btn">พิมพ์สรุปวันนี้</button><button class="btn primary" id="newBooking">+ เพิ่มการจอง</button></div>
+      </div>
+      <div class="notice"><div><strong>มี 2 รายการต้องตรวจสอบ</strong> — หลักฐานมัดจำ 1 รายการ และเอกสารสุขภาพ 1 รายการ</div><button data-page-jump="payments">ตรวจสอบตอนนี้ →</button></div>
+
+      <div class="stats">
+        <article class="stat"><div class="label">แมวเข้าพักวันนี้</div><div class="value">19 <small>/ 30</small></div><div class="hint">ยังรับได้อีก 11 ตัว</div></article>
+        <article class="stat"><div class="label">ห้องที่ใช้งาน</div><div class="value">8 <small>/ 16</small></div><div class="hint">คอนโด 6 • วิลล่า 2</div></article>
+        <article class="stat"><div class="label">เช็กอินวันนี้</div><div class="value">3</div><div class="hint">รายการถัดไป 10:30 น.</div></article>
+        <article class="stat warning"><div class="label">รอดำเนินการ</div><div class="value">2</div><div class="hint">ควรตรวจภายในวันนี้</div></article>
+      </div>
+
+      <article class="card" style="margin-bottom:18px">
+        <div class="card-head"><h2>กดบันทึกงาน — ไม่ต้องพิมพ์</h2><span class="badge" id="roleBadge">หน้าร้าน</span></div>
+        <div class="card-body quick-actions">
+          <button class="quick-action" data-roles="caregiver,housekeeper"><b>✓</b>ทำความสะอาด</button>
+          <button class="quick-action" data-roles="caregiver"><b>◉</b>เติมน้ำ</button>
+          <button class="quick-action" data-roles="caregiver"><b>♨</b>ให้อาหาร</button>
+          <button class="quick-action" data-roles="caregiver"><b>+</b>ให้ยา</button>
+          <button class="quick-action" data-roles="caregiver"><b>▣</b>ถ่ายรูปแล้ว</button>
+          <button class="quick-action help" data-roles="frontdesk,caregiver,housekeeper,owner"><b>!</b>ขอความช่วยเหลือ</button>
+        </div>
+      </article>
+
+      <div class="grid">
+        <article class="card">
+          <div class="card-head"><h2>สถานะห้องวันนี้</h2><div class="date-tabs"><button>เมื่อวาน</button><button class="active">วันนี้</button><button>พรุ่งนี้</button></div></div>
+          <div class="card-body">
+            <div class="rooms">
+              <div class="room occupied"><strong>คอนโด 1</strong><span>2 / 4 ตัว</span><div class="cats">มะลิ, โกโก้</div></div>
+              <div class="room occupied"><strong>คอนโด 2</strong><span>3 / 4 ตัว</span><div class="cats">ส้ม, เสือ, ถุงทอง</div></div>
+              <div class="room checkout"><strong>คอนโด 3</strong><span>2 / 4 ตัว</span><div class="cats">โมจิ, มีตังค์</div></div>
+              <div class="room occupied"><strong>คอนโด 4</strong><span>4 / 4 ตัว</span><div class="cats">ครอบครัวน้องชา</div></div>
+              <div class="room occupied"><strong>คอนโด 5</strong><span>2 / 4 ตัว</span><div class="cats">โอวัลติน, ลาเต้</div></div>
+              <div class="room"><strong>คอนโด 6</strong><span>ว่าง</span><div class="cats">พร้อมรับจอง</div></div>
+              <div class="room occupied"><strong>วิลล่า 1</strong><span>2 / 2 ตัว</span><div class="cats">ไข่ตุ๋น, เต้าหู้</div></div>
+              <div class="room blocked"><strong>วิลล่า 2</strong><span>ปิดทำความสะอาด</span><div class="cats">พร้อม 14:00</div></div>
+            </div>
+            <div class="legend"><span><i style="background:#eef5f0"></i>มีแมวเข้าพัก</span><span><i style="background:#fff4eb"></i>เช็กเอาต์วันนี้</span><span><i style="background:#fff;border:1px solid #ccc"></i>ห้องว่าง</span><span><i style="background:#f2efea"></i>ปิดใช้งาน</span></div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>งานที่ต้องทำวันนี้</h2><button class="mini">ดูทั้งหมด</button></div>
+          <div class="card-body tasks">
+            <div class="task"><div class="time">08:30</div><p><b>ให้ยาน้องมะลิ</b><br><small>คอนโด 1 • หลังอาหาร</small></p></div>
+            <div class="task"><div class="time">10:30</div><p><b>เช็กอินคุณกานต์</b><br><small>น้องข้าวปั้น 1 ตัว</small></p></div>
+            <div class="task"><div class="time">12:00</div><p><b>เริ่มช่วงเช็กเอาต์</b><br><small>วันนี้รับกลับ 3 รายการ</small></p></div>
+            <div class="task"><div class="time">17:30</div><p><b>ให้ยาน้องมะลิ</b><br><small>คอนโด 1 • ตรวจบันทึกก่อนให้</small></p></div>
+          </div>
+        </article>
+      </div>
+
+      <article class="card table-card">
+        <div class="card-head"><h2>รายการเข้า–ออกวันนี้</h2><div class="filters"><input class="search" id="search" placeholder="ค้นหาเลขจอง ชื่อลูกค้า หรือชื่อแมว"></div></div>
+        <div class="table-wrap"><table><thead><tr><th>เลขจอง</th><th>ลูกค้า / แมว</th><th>ห้อง</th><th>เวลา</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody id="bookingRows">
+          <tr><td>BK-20260730-001</td><td><b>คุณกานต์</b><br>ข้าวปั้น • 1 ตัว</td><td>รอจัดห้อง</td><td>เข้า 10:30</td><td><span class="badge orange">รอเช็กอิน</span></td><td><div class="actions"><button class="mini">เปิด</button><button class="mini print">พิมพ์ใบห้อง</button></div></td></tr>
+          <tr><td>BK-20260727-004</td><td><b>คุณนิชา</b><br>โมจิ, มีตังค์ • 2 ตัว</td><td>คอนโด 3</td><td>กลับ 14:00</td><td><span class="badge">พร้อมเช็กเอาต์</span></td><td><div class="actions"><button class="mini">เปิด</button><button class="mini print">พิมพ์ใบห้อง</button></div></td></tr>
+          <tr><td>BK-20260728-002</td><td><b>คุณเมย์</b><br>ลาเต้, โอวัลติน • 2 ตัว</td><td>คอนโด 5</td><td>พักต่อ</td><td><span class="badge red">เอกสารไม่ครบ</span></td><td><div class="actions"><button class="mini">เปิด</button><button class="mini print">พิมพ์ใบห้อง</button></div></td></tr>
+        </tbody></table></div>
+      </article>
+    </section>
+
+    <section id="rooms" class="page"><div class="topbar"><div><div class="eyebrow">ROOM CALENDAR</div><h1>ตารางห้องพัก</h1></div></div><article class="card table-card"><div class="empty-page">หน้าตารางห้องแบบรายวันและรายเดือน จะพัฒนาต่อจากข้อมูลห้องวันนี้</div></article></section>
+    <section id="bookings" class="page"><div class="topbar"><div><div class="eyebrow">BOOKINGS</div><h1>รายการจองทั้งหมด</h1></div><button class="btn primary">+ เพิ่มการจอง</button></div><article class="card table-card"><div class="empty-page">ค้นหา กรอง และเปิดรายละเอียดรายการจองทั้งหมด</div></article></section>
+    <section id="payments" class="page"><div class="topbar"><div><div class="eyebrow">PAYMENTS</div><h1>ตรวจสอบการชำระเงิน</h1></div></div><article class="card table-card"><div class="empty-page">มีหลักฐานมัดจำรอตรวจ 1 รายการ</div></article></section>
+    <section id="customers" class="page"><div class="topbar"><div><div class="eyebrow">CUSTOMERS & CATS</div><h1>ลูกค้าและแมว</h1></div></div><article class="card table-card"><div class="empty-page">ฐานข้อมูลลูกค้า ประวัติแมว อาหาร ยา และพฤติกรรม</div></article></section>
+    <section id="settings" class="page"><div class="topbar"><div><div class="eyebrow">SETTINGS</div><h1>ตั้งค่าระบบ</h1></div></div><article class="card table-card"><div class="empty-page">จัดการห้อง ราคา ผู้ใช้งาน LINE OA และการเปิด–ปิด AI</div></article></section>
+  </main>
+</div>
+<script>
+  const pages=[...document.querySelectorAll('.page')];
+  const navButtons=[...document.querySelectorAll('.nav button')];
+  function showPage(id){pages.forEach(p=>p.classList.toggle('active',p.id===id));navButtons.forEach(b=>b.classList.toggle('active',b.dataset.page===id));window.scrollTo({top:0,behavior:'smooth'});}
+  navButtons.forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+  document.querySelectorAll('[data-page-jump]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.pageJump)));
+  document.getElementById('search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('#bookingRows tr').forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q));});
+  document.querySelectorAll('.mini.print').forEach(b=>b.addEventListener('click',()=>window.open('room-label-80mm.html','_blank')));
+  document.getElementById('newBooking').addEventListener('click',()=>alert('ขั้นถัดไปจะเปิดแบบฟอร์มเพิ่มการจองใหม่'));
+  const roleNames={frontdesk:'หน้าร้าน',caregiver:'พี่เลี้ยงแมว',housekeeper:'แม่บ้าน',owner:'Owner'};
+  const roleSelect=document.getElementById('roleSelect');
+  function applyRole(){const role=roleSelect.value;document.getElementById('roleBadge').textContent=roleNames[role];document.querySelectorAll('[data-roles]').forEach(el=>{el.hidden=!el.dataset.roles.split(',').includes(role)});}
+  roleSelect.addEventListener('change',applyRole);applyRole();
+  document.querySelectorAll('.quick-action').forEach(button=>button.addEventListener('click',()=>{if(button.classList.contains('help')){alert('ส่งคำขอให้หัวหน้าแล้ว');return;}button.classList.toggle('done');button.setAttribute('aria-pressed',button.classList.contains('done'));}));
+</script>
+</body>
+</html>

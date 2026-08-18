@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { StaffActionDialog } from "./staff-action-dialog";
 import { StaffBulkPurge } from "./staff-bulk-purge";
+import { PetPhoto } from "./staff-pet-photo";
 import styles from "./staff-sections.module.css";
 
 export type DashboardSection = "overview" | "rooms" | "bookings" | "payments" | "customers";
@@ -56,6 +57,8 @@ export interface DashboardCustomer {
     sex: string | null;
     breed: string | null;
     ageText: string | null;
+    photoUrl: string | null;
+    photoUpdatedAt: string | null;
   }>;
   bookingCount: number;
   latestBookingAt: string | null;
@@ -294,7 +297,7 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
       <header className={styles.panelHeaderWithFilters}>
         <div><span>CUSTOMER & PET</span><h2>ลูกค้าและน้องแมว</h2><p>{filtered.length} จาก {customers.length} ครอบครัว</p></div>
         <div className={styles.filters}>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร Mi Home ID, LINE หรือชื่อแมว" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ค้นหาชื่อ เบอร์โทร บัญชี Mi Home, LINE หรือชื่อแมว" />
           {canPurge && <StaffBulkPurge scope="customers" title="ลบลูกค้าและน้องแมวทั้งหมด" description="ลูกค้าและน้องแมวทั้งหมด รวมถึงรายการจอง การชำระเงิน และข้อมูลที่เชื่อมโยงทั้งหมดจะถูกลบถาวร ห้องพักจะยังอยู่ ข้อมูลกู้คืนไม่ได้" accessToken={accessToken} onChanged={onChanged} onError={onError} />}
         </div>
       </header>
@@ -306,7 +309,7 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
               <div className={styles.customerBody}>
                 <dl className={styles.customerDetails}>
                   <div><dt>เบอร์โทร</dt><dd>{customer.phone}</dd></div>
-                  <div><dt>Mi Home ID</dt><dd>{customer.miHomeAppId || "ยังไม่ระบุ"}</dd></div>
+                  <div><dt>บัญชี Mi Home</dt><dd>{customer.miHomeAppId || "ยังไม่ระบุ"}</dd></div>
                   <div><dt>ชื่อ LINE</dt><dd>{customer.lineDisplayName || (customer.hasLineAccount ? "เชื่อมต่อแล้ว" : "ยังไม่เชื่อมต่อ")}</dd></div>
                   <div><dt>จำนวนการจอง</dt><dd>{customer.bookingCount} ครั้ง</dd></div>
                   <div><dt>การจองล่าสุด</dt><dd>{customer.latestBookingAt ? formatDateTime(customer.latestBookingAt) : "ยังไม่มี"}</dd></div>
@@ -315,6 +318,15 @@ export function CustomersSection({ customers, accessToken, canPurge, onChanged, 
                   <header><span>ข้อมูลน้องแมว</span><strong>{customer.pets.length} ตัว</strong></header>
                   {customer.pets.length ? customer.pets.map((pet) => (
                     <article key={pet.petId}>
+                      <PetPhoto
+                        petId={pet.petId}
+                        petName={pet.petName}
+                        photoUrl={pet.photoUrl}
+                        photoUpdatedAt={pet.photoUpdatedAt}
+                        accessToken={accessToken}
+                        onChanged={onChanged}
+                        onError={onError}
+                      />
                       <div><strong>{pet.petName}</strong><span>{pet.breed || "ยังไม่ระบุสายพันธุ์"}</span></div>
                       <dl><div><dt>เพศ</dt><dd>{pet.sex || "ไม่ระบุ"}</dd></div><div><dt>อายุ</dt><dd>{pet.ageText || "ไม่ระบุ"}</dd></div></dl>
                     </article>

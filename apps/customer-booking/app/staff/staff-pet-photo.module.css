@@ -1,0 +1,89 @@
+.photoCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 92px;
+}
+
+.frame {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  border-radius: 14px;
+  border: 1px solid #f0dce7;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.frame span {
+  font-size: 28px;
+  font-weight: 700;
+  color: #d79cbb;
+}
+
+.busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #b04f82;
+  font-size: 11px;
+  font-style: normal;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+}
+
+.actions button {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #e6c3d7;
+  background: #fff;
+  color: #b04f82;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.actions button:hover:not(:disabled) {
+  background: #fdf2f8;
+  border-color: #d79cbb;
+}
+
+.actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.removeButton {
+  border-color: #f0c9c9;
+  color: #b4413f;
+}
+
+.removeButton:hover:not(:disabled) {
+  background: #fdf1f1;
+  border-color: #e4a3a3;
+}
+
+.photoCell small {
+  color: #8a7280;
+  font-size: 10px;
+  text-align: center;
+}

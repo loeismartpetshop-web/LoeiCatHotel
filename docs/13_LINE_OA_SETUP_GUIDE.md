@@ -16,14 +16,30 @@ Version: 1.0
 | Provider `LOEI CAT HOTEL` | **สร้างแล้ว** |
 | Messaging API channel `LOEI CAT HOTEL` | **สร้างแล้ว** |
 | LINE Login channel `Login Cat Hotel` | **สร้างแล้ว** (สถานะ Developing) |
-| ผูก OA เข้ากับ LINE Login channel | ยังไม่ได้ทำ |
-| Channel secret / access token เข้า `.env` | ยังไม่ได้ทำ |
+| LIFF app `หน้าร้าน` (`2010982713-…`) | **สร้างแล้ว** |
+| เว็บลูกค้า `https://loeicathotel.vercel.app` | **ออนไลน์แล้ว** |
+| LIFF Endpoint URL | **ตั้งแล้ว** |
+| ค่าทั้ง 4 เข้า `.env` | **ครบแล้ว** |
+| ผูก OA เข้ากับ LINE Login channel | ต้องยืนยัน |
+| Bot link feature ใน LIFF | ต้องยืนยัน |
 | ตั้งค่า Response settings ใน OA Manager | ยังไม่ได้ทำ |
-| LIFF app | **รอ HTTPS URL** |
-| Webhook endpoint | **รอ server** |
+| Webhook endpoint | **รอ deploy `services/booking-api`** |
 | Rich Menu | ยังไม่ได้ทำ |
+| Publish `Login Cat Hotel` | ทำก่อนเปิดใช้จริง |
 
-ต้องได้ 3 ค่านี้เข้า `.env` ให้ครบ: `PUBLIC_LINE_LIFF_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`
+ต้องได้ 4 ค่านี้เข้า `.env` ให้ครบ: `PUBLIC_LINE_LIFF_ID`, `LINE_LOGIN_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN`
+
+### อย่าสับสน: Endpoint URL vs Webhook URL
+
+| | LIFF Endpoint URL | Webhook URL |
+|---|---|---|
+| อยู่ที่ | Login Cat Hotel → LIFF | LOEI CAT HOTEL → Messaging API |
+| คืออะไร | หน้าเว็บที่เปิดในแอป LINE | API รับ event จาก LINE |
+| ใครเรียก | ลูกค้า (GET) | เซิร์ฟเวอร์ LINE (POST) |
+| ต้องตอบ | HTML | `200` + verify signature |
+| ค่าปัจจุบัน | `https://loeicathotel.vercel.app/` | **เว้นว่างไว้ก่อน** |
+
+**ห้ามใส่ค่าเดียวกันทั้งสองช่อง** — ถ้าชี้ Webhook ไปที่หน้าเว็บ ข้อความที่ลูกค้าทักมาจะหายไปทั้งหมด
 
 ### โครงสร้างที่ใช้
 

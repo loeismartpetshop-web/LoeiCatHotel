@@ -545,3 +545,63 @@ button { color: inherit; }
   .receipt-account strong { font-size: 15px; }
   .receipt-account button { min-height: 43px; font-size: 13px; }
 }
+
+/* ── ปุ่มสลับภาษา TH/EN ───────────────────────────────── */
+
+.locale-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.locale-switch button {
+  min-width: 42px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.locale-switch button:hover:not(.selected) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.locale-switch button.selected {
+  background: #fff;
+  color: var(--brand-strong, #b04f82);
+}
+
+.brand-panel .locale-switch {
+  align-self: flex-start;
+  margin-bottom: 14px;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-header .locale-switch {
+  background: #fdf2f8;
+  border-color: #f0dce7;
+  color: var(--brand-strong, #b04f82);
+}
+
+.mobile-header .locale-switch button:hover:not(.selected) {
+  background: #f7e2ee;
+}
+
+.mobile-header .locale-switch button.selected {
+  background: var(--brand-strong, #b04f82);
+  color: #fff;
+}

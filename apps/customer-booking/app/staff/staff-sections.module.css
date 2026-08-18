@@ -661,7 +661,7 @@
 
 .petList > article {
   display: grid;
-  grid-template-columns: minmax(130px, 0.7fr) minmax(220px, 1.3fr);
+  grid-template-columns: auto minmax(120px, 0.7fr) minmax(200px, 1.3fr);
   align-items: center;
   gap: 18px;
   padding: 10px 12px;
@@ -787,5 +787,17 @@
 @media (prefers-reduced-motion: reduce) {
   .customerActions button {
     transition: none;
+  }
+}
+
+
+@media (max-width: 640px) {
+  .petList > article {
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+  }
+
+  .petList > article > dl {
+    grid-column: 1 / -1;
   }
 }

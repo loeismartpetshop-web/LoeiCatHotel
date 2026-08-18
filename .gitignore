@@ -17,3 +17,5 @@ dist/
 Thumbs.db
 *.tar.gz
 Token KEY API.txt
+.vercel
+.env*.local

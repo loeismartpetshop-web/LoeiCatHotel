@@ -1,6 +1,6 @@
 # HANDOFF — LOEI CAT HOTEL Booking System
 
-อัปเดตล่าสุด: 10 สิงหาคม 2026 เวลา 22:00 น. (Asia/Bangkok)
+อัปเดตล่าสุด: 10 สิงหาคม 2026 เวลา 23:40 น. (Asia/Bangkok)
 สถานะ: Customer Booking Web App และ Staff Dashboard deploy บน Vercel Production และเชื่อม Supabase/LINE OA แล้ว ปัจจุบันยังอยู่ช่วง Pilot/Test และยังไม่ถือว่า Production-ready จนกว่าจะผ่าน Acceptance Test ครบ
 
 ## 0. งานล่าสุดวันที่ 10 สิงหาคม 2026
@@ -50,6 +50,28 @@
 - หน้าต่างยืนยันการลบใช้ UI ของระบบ ไม่ใช้ browser prompt แบบเดิม
 - บน desktop จัดกลุ่มการ์ดกรอกข้อมูลฝั่งขวาให้อยู่กึ่งกลางแนวตั้งเมื่อเนื้อหาสั้น โดยไม่กระทบ tablet/mobile และขั้นตอนที่เนื้อหายาว
 
+### Mi Home ID และการกรอกข้อมูลบนมือถือ
+
+- เพิ่มช่อง `บัญชี Xiaomi (Mi Home) สำหรับดูกล้อง` ในฟอร์มจองของลูกค้า ใช้สำหรับให้พนักงานแชร์สิทธิ์ดูกล้องห้องพักให้บัญชีลูกค้า
+- ค่าที่กรอกคือ **บัญชีผู้รับสิทธิ์ ไม่ใช่รหัสของตัวกล้อง** Mi Home/Xiaomi Home รับได้ 3 รูปแบบ: Xiaomi Account ID ที่เป็นตัวเลข, อีเมลที่ผูกกับบัญชี Xiaomi หรือเบอร์โทรที่ผูกกับบัญชี Xiaomi
+- บัญชีผู้รับต้องตั้งภูมิภาค (Region) ตรงกับบัญชีที่ผูกกล้องของโรงแรม มิฉะนั้นการแชร์จะไม่สำเร็จ ซึ่งเป็นสาเหตุที่พบบ่อยที่สุด
+- ฟอร์มตัดช่องว่างและอักขระซ่อนออกอัตโนมัติ พร้อมตรวจรูปแบบแบบ real-time แล้วบอกผู้ใช้ว่าค่าที่กรอกเข้าข่าย Account ID, อีเมล, เบอร์โทร หรือรูปแบบที่ Mi Home อาจไม่รู้จัก
+- ช่องนี้เป็นตัวเลือก ไม่บังคับกรอก จำกัดความยาว 120 ตัวอักษร และแสดงในหน้าสรุปก่อนยืนยันการจอง
+- บันทึกลง `public.customers.mihome_app_id`
+- หากคอลัมน์ยังไม่มีในฐานข้อมูล ระบบจะไม่ล้มเหลว แต่จะแนบค่าไว้ใน `customer_notes` และเขียน log เตือนว่า migration ยังไม่ได้รัน
+- Staff Dashboard แสดงบัญชี Mi Home ในการ์ดลูกค้า และค้นหาด้วยค่านี้ได้
+- บัญชี Mi Home ถือเป็นข้อมูลส่วนบุคคล เปิดให้เห็นเฉพาะพนักงานที่มีสิทธิ์
+- ล็อกช่องเบอร์โทรศัพท์ให้เหมาะกับมือถือ/Android: `type=tel`, คีย์บอร์ดตัวเลข, รับเฉพาะตัวเลข, จำกัด 10 ตัว และตรวจรูปแบบ `0XXXXXXXXX`
+
+### Migration ที่รันบน Supabase แล้ว
+
+| ไฟล์ | รายการ |
+|---|---|
+| `database/migrations/003_staff_role_owner_front_desk_only.sql` | ลดค่า enum `staff_role` เหลือ `owner` และ `front_desk` โดยคงชนิด `staff_role_legacy` ไว้ให้ RLS policy เดิมใช้งานต่อได้ |
+| `database/migrations/004_add_customer_mihome_app_id.sql` | เพิ่มคอลัมน์ `customers.mihome_app_id` พร้อม constraint ความยาวไม่เกิน 120 ตัวอักษร |
+
+migration ทั้งสองไฟล์รันบน Supabase Production แล้ว จึงไม่ต้องพึ่ง fallback ที่เขียน Mi Home ID ลง `customer_notes` อีก แต่โค้ด fallback ยังคงอยู่เพื่อความปลอดภัยของ deploy ย้อนหลัง
+
 ### Commit ของงานวันนี้
 
 | Commit | รายการ |
@@ -62,6 +84,8 @@
 | `47a5d28` | เพิ่มการลบข้อมูลลูกค้าทั้งครอบครัว |
 | `1e23ef1` | เพิ่มการลบข้อมูลทั้งหมดแบบตรวจรหัสผ่าน Owner |
 | `ad88b13` | จัดการ์ดหน้าจอง desktop ให้อยู่กึ่งกลางแนวตั้ง |
+| `c6c51ea` | อัปเดต HANDOFF ตามงาน Production ล่าสุด |
+| `63c869b` | เพิ่ม Mi Home ID และการป้องกันการกรอกข้อมูลบนมือถือ |
 
 ### ผลตรวจล่าสุด
 
@@ -70,6 +94,9 @@
 - `https://loeicathotel.vercel.app/` และ `/staff` ตอบ HTTP 200
 - API ลบทั้งหมวดเมื่อไม่มี Authorization ตอบ HTTP 401 และไม่แตะข้อมูล Supabase
 - ไม่ได้ทดลองลบข้อมูลจริงในการตรวจ Production
+- `main` ในเครื่องและ `origin/main` ตรงกันที่ `63c869b`
+- dev server ในเครื่อง (`next dev -p 3100`) เคยล้มด้วย `SyntaxError: Invalid or unexpected token` จาก `node_modules` ที่เสียหาย แก้แล้วโดยติดตั้ง dependency ใหม่
+- ยังไม่ได้ทดสอบการจองจริงบน Android/LINE in-app browser หลังเพิ่มช่อง Mi Home ID
 
 ## 1. วัตถุประสงค์
 
@@ -257,7 +284,10 @@ UX ต้องใช้ปุ่ม ตัวเลือก และ QR เ�
 - `refund_requests`
 - `booking_status_history`
 
-ไฟล์นี้เป็น draft ไม่ใช่ migration สำหรับ Production ทีมพัฒนาต้อง:
+ไฟล์นี้เป็น draft ไม่ใช่ migration สำหรับ Production
+migration ที่ใช้งานจริงอยู่ใน `database/migrations/` (001 schema, 002 RLS, 003 seed, 003 staff role, 004 Mi Home ID) และรันบน Supabase Production แล้ว
+
+งานที่ยังเหลือในฝั่งฐานข้อมูล:
 
 1. ปิดคำตัดสินที่กระทบ schema
 2. สร้าง migration ใหม่ด้วย Supabase CLI
@@ -293,6 +323,8 @@ PUBLIC_APP_URL
 - มี `packages/domain` พร้อมกฎคำนวณราคาตั้งต้น มัดจำ และเพดาน 30 ตัว
 - `apps/customer-booking` เป็น Next.js Web App ที่มีหน้าจองลูกค้า, Booking API, LINE webhook และ Staff Dashboard ในแอปเดียวกัน
 - Customer Booking และ Staff Dashboard เชื่อม Supabase Production ผ่าน environment variables ของ Vercel แล้ว
+- ฟอร์มจองเก็บ Mi Home App ID ของลูกค้าลง `customers.mihome_app_id` และ Staff Dashboard ค้นหาด้วยค่านี้ได้
+- Role ที่ฐานข้อมูลรองรับหลัง migration 003 คือ `owner` และ `front_desk` เท่านั้น
 - Staff Dashboard ที่ใช้งานจริงอยู่ที่ `apps/customer-booking/app/staff`; ส่วน `apps/staff-dashboard/prototypes` เป็นไฟล์ต้นแบบอ้างอิงเดิม
 - Server API ที่ใช้งานจริงอยู่ใต้ `apps/customer-booking/app/api`; `services/booking-api` ยังเป็นโครงสร้างที่เสนอเดิม
 - Deploy Production ผ่าน Vercel และ source code หลักอยู่ใน GitHub สาขา `main`
