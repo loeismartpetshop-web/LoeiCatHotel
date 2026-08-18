@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "รหัสน้องแมวไม่ถูกต้อง" }, { status: 400 });
     }
 
-    const contentType = (request.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    const contentType = (request.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
     const extension = ALLOWED_TYPES[contentType];
     if (!extension) {
       return NextResponse.json({ error: "รองรับเฉพาะไฟล์ JPG, PNG หรือ WEBP" }, { status: 415 });
