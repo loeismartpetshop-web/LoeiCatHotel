@@ -93,7 +93,8 @@ async function toWebpDataUrl(file: File): Promise<string> {
   const objectUrl = URL.createObjectURL(file);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const element = new Image();
+      // ใช้ document.createElement เพราะชื่อ Image ชนกับ component ของ next/image ที่ import ไว้
+      const element = document.createElement("img");
       element.onload = () => resolve(element);
       element.onerror = () => reject(new Error("อ่านไฟล์รูปไม่สำเร็จ"));
       element.src = objectUrl;
@@ -594,11 +595,12 @@ export function BookingApp() {
                           <div className="pet-photo-picker">
                             <div className="pet-photo-frame">
                               {form.petPhotos[index]
+                                // eslint-disable-next-line @next/next/no-img-element
                                 ? <img src={form.petPhotos[index]} alt={`${t("รูปของ")} ${name || `${t("ตัวที่")} ${index + 1}`}`} />
                                 : <span aria-hidden="true">🐾</span>}
                             </div>
                             <label className="pet-photo-button">
-                              <span>{form.petPhotos[index] ? t("เปลี่ยนรูป") : t("เพิ่มรูปน้อง")}</span>
+                              <span>{form.petPhotos[index] ? t("เปลี่ยนรูป") : t("เพิ่มรูป")}</span>
                               <input type="file" accept="image/*" hidden onChange={(event) => { void setPetPhoto(index, event.target.files?.[0] ?? null); event.target.value = ""; }} />
                             </label>
                             {form.petPhotos[index] && <button type="button" className="pet-photo-clear" onClick={() => clearPetPhoto(index)}>{t("ลบรูป")}</button>}

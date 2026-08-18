@@ -223,6 +223,7 @@ export function BookingsSection({ bookings }: { bookings: DashboardBooking[] }) 
                     {booking.pets.map((pet) => (
                       <figure key={pet.petId}>
                         {pet.photoUrl
+                          // eslint-disable-next-line @next/next/no-img-element
                           ? <img src={pet.photoUrl} alt={`รูปของ ${pet.petName}`} loading="lazy" />
                           : <span aria-hidden="true">{pet.petName.trim().charAt(0) || "?"}</span>}
                         <figcaption>{pet.petName}</figcaption>

@@ -234,6 +234,7 @@ const EN: Record<string, string> = {
   "ภายในวันเดียวกัน": "Same day",
   "ยังไม่ได้เลือกวัน": "No date selected",
   "เลือกภาษา": "Choose language",
+  "เพิ่มรูป": "Add photo",
   "เพิ่มรูปน้อง": "Add photo",
   "เปลี่ยนรูป": "Change photo",
   "ลบรูป": "Remove photo",

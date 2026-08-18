@@ -285,7 +285,7 @@ const PET_PHOTO_MIME_EXTENSIONS: Record<string, string> = {
 interface PetPhotoUpload {
   contentType: string;
   extension: string;
-  bytes: Buffer;
+  bytes: ArrayBuffer;
 }
 
 // รูปน้องแมวส่งมาเป็น data URL จากหน้าจอง (แปลงเป็น WebP ในเครื่องลูกค้าแล้ว)
@@ -297,8 +297,10 @@ function sanitizePetPhoto(value: unknown): PetPhotoUpload | null {
   const contentType = match[1]!;
   const extension = PET_PHOTO_MIME_EXTENSIONS[contentType];
   if (!extension) return null;
-  const bytes = Buffer.from(match[2]!, "base64");
-  if (!bytes.byteLength || bytes.byteLength > PET_PHOTO_MAX_BYTES) return null;
+  const buffer = Buffer.from(match[2]!, "base64");
+  if (!buffer.byteLength || buffer.byteLength > PET_PHOTO_MAX_BYTES) return null;
+  // คัดลอกเป็น ArrayBuffer ตรงๆ เพื่อให้ส่งเป็น body ของ fetch ได้ตามชนิดที่ TypeScript ต้องการ
+  const bytes = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
   return { contentType, extension, bytes };
 }
 
@@ -314,7 +316,7 @@ async function savePetPhoto(petId: string, photo: PetPhotoUpload): Promise<void>
       "Content-Type": photo.contentType,
       "x-upsert": "true"
     },
-    body: new Uint8Array(photo.bytes)
+    body: photo.bytes
   });
   if (!upload.ok) throw new Error(`Storage ${upload.status}: ${(await upload.text()).slice(0, 200)}`);
   await supabaseRequest(`pets?pet_id=eq.${encodeURIComponent(petId)}`, {

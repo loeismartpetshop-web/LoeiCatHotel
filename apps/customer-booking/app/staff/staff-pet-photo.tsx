@@ -21,7 +21,8 @@ async function shrinkImage(file: File): Promise<Blob> {
   const bitmapUrl = URL.createObjectURL(file);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const element = new Image();
+      // ใช้ document.createElement เพราะชื่อ Image ชนกับ component ของ next/image ที่ import ไว้
+      const element = document.createElement("img");
       element.onload = () => resolve(element);
       element.onerror = () => reject(new Error("อ่านไฟล์รูปไม่สำเร็จ"));
       element.src = bitmapUrl;
@@ -120,6 +121,7 @@ export function PetPhoto({
     <div className={styles.photoCell}>
       <div className={styles.frame}>
         {photoUrl
+          // eslint-disable-next-line @next/next/no-img-element
           ? <img src={photoUrl} alt={`รูปของ ${petName}`} loading="lazy" />
           : <span aria-hidden="true">{petName.trim().charAt(0) || "?"}</span>}
         {busy && <i className={styles.busy}>กำลังบันทึก...</i>}

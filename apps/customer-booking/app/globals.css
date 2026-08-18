@@ -682,3 +682,71 @@ button { color: inherit; }
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* ── ช่องวันที่/เวลาบนมือถือ ────────────────────────────
+   iOS Safari ให้ input[type=date|time] มีความกว้างภายในของตัวเอง และ grid item
+   มี min-width:auto ทำให้ช่องดันทะลุขอบการ์ดออกไป และ border-radius ถูกทับด้วย
+   native appearance จึงต้องปิด appearance และบังคับให้ย่อได้                    */
+
+.field-grid,
+.field-label {
+  min-width: 0;
+}
+
+.field-label input[type="date"],
+.field-label input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  background-clip: padding-box;
+}
+
+/* iOS วางข้อความวันที่ไว้กลางช่องและตัดขอบมนของตัวเอง ปรับให้ชิดซ้ายเหมือนช่องอื่น */
+.field-label input[type="date"]::-webkit-date-and-time-value,
+.field-label input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
+.field-label input[type="date"]::-webkit-calendar-picker-indicator,
+.field-label input[type="time"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+/* หัวเว็บบนมือถือแน่นขึ้นเพราะมีปุ่มภาษาเพิ่มเข้ามา จึงบีบขนาดให้อยู่บรรทัดเดียว */
+.mobile-header .brand-lockup strong {
+  white-space: nowrap;
+}
+
+.mobile-header .locale-switch {
+  padding: 2px;
+}
+
+.mobile-header .locale-switch button {
+  min-width: 34px;
+  padding: 4px 7px;
+  font-size: 11px;
+}
+
+@media (max-width: 430px) {
+  .mobile-header .line-badge {
+    display: none;
+  }
+}
+
+/* ช่องเลือกรูปน้องแมวให้พออยู่ในการ์ดบนจอแคบ */
+.pet-photo-picker {
+  width: 74px;
+}
+
+.pet-photo-button span {
+  padding: 3px 7px;
+  font-size: 10px;
+}
